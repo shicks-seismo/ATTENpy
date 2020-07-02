@@ -1,0 +1,235 @@
+Working on event: e20170212.201626
+ML_voila = 3.61
+S-wave velocity at source = 4000.0
+Looping over picked arrivals, importing data and computing spectra
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsCould not read in velocity waveform file: .//.//e20170212.201626/e20170212.201626.WI.CBE.*T.msd
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Mw_est = 3.61
+Calculating corner frequency for phase: P
+p-wave fc =  7.37
+best mw = 3.15
+Calculating corner frequency for phase: S
+Not enough HQ S-arrivals for corner freq
+Constraining fc_s
+Using default fc_p / fc_s ratio = 1
+Inverting t*(P) - case 2
+Inverting t*(P) - case 3
+Inverting t*(S) - case 2
+Inverting t*(S) - case 3

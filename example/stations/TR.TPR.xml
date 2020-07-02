@@ -1,0 +1,162 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.0">
+  <Source>sc3ml import</Source>
+  <Sender>ObsPy Inventory</Sender>
+  <Module>None</Module>
+  <ModuleURI>None</ModuleURI>
+  <Created>2018-03-01T13:43:57.648081</Created>
+  <Network code="TR" restrictedStatus="open" startDate="1980-01-01T00:00:00">
+    <Description>SRC</Description>
+    <Station code="TPR" restrictedStatus="open" startDate="1982-01-01T00:00:00">
+      <Latitude unit="DEGREES">11.186</Latitude>
+      <Longitude unit="DEGREES">-60.777</Longitude>
+      <Elevation>245.0</Elevation>
+      <Site>
+        <Name>Tobago, Prospect</Name>
+        <Town>Tobago</Town>
+        <Country> Prospect</Country>
+      </Site>
+      <CreationDate>1982-01-01T00:00:00</CreationDate>
+      <Channel code="EHZ" locationCode="" restrictedStatus="open" startDate="1982-01-01T00:00:00">
+        <Latitude unit="DEGREES">11.186</Latitude>
+        <Longitude unit="DEGREES">-60.777</Longitude>
+        <Elevation>245.0</Elevation>
+        <Depth>0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <Dip unit="DEGREES">-90.0</Dip>
+        <SampleRate unit="SAMPLES/S">100.0</SampleRate>
+        <SampleRateRatio>
+          <NumberSamples>100</NumberSamples>
+          <NumberSeconds>1</NumberSeconds>
+        </SampleRateRatio>
+        <StorageFormat>Steim2</StorageFormat>
+        <ClockDrift unit="SECONDS/SAMPLE">0.0</ClockDrift>
+        <Sensor resourceId="Sensor#20141017204906.113256.736">
+          <Description>unknown</Description>
+          <Model>unknown</Model>
+        </Sensor>
+        <DataLogger resourceId="Datalogger#20141017204906.113054.734">
+          <Description>TPR.1982.001.H00</Description>
+        </DataLogger>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>507737000.0</Value>
+            <Frequency>10.0</Frequency>
+            <InputUnits>
+              <Name>M/S</Name>
+              <Description>None</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>None</Name>
+              <Description>None</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros name="TPR.1982.001.HZ00" resourceId="ResponsePAZ#20141017204906.11332.737">
+              <InputUnits>
+                <Name>M/S</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>1.0</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">5.0</NormalizationFrequency>
+              <Zero number="2">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Zero number="3">
+                <Real>0.0</Real>
+                <Imaginary>0.0</Imaginary>
+              </Zero>
+              <Pole number="0">
+                <Real>-4.398</Real>
+                <Imaginary>4.487</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real>-4.398</Real>
+                <Imaginary>-4.487</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>171.0</Value>
+              <Frequency>5.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="2">
+            <PolesZeros name="TPR.00.EHZ.1982.001.stage_2" resourceId="ResponsePAZ#20141017204906.113119.735">
+              <InputUnits>
+                <Name>V</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>2.25621e+18</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">30.0</NormalizationFrequency>
+              <Pole number="0">
+                <Real>-36.7847</Real>
+                <Imaginary>184.929</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real>-36.7847</Real>
+                <Imaginary>-184.929</Imaginary>
+              </Pole>
+              <Pole number="2">
+                <Real>-104.754</Real>
+                <Imaginary>156.752</Imaginary>
+              </Pole>
+              <Pole number="3">
+                <Real>-104.754</Real>
+                <Imaginary>-156.752</Imaginary>
+              </Pole>
+              <Pole number="4">
+                <Real>-156.752</Real>
+                <Imaginary>104.754</Imaginary>
+              </Pole>
+              <Pole number="5">
+                <Real>-156.752</Real>
+                <Imaginary>-104.754</Imaginary>
+              </Pole>
+              <Pole number="6">
+                <Real>-184.929</Real>
+                <Imaginary>36.7847</Imaginary>
+              </Pole>
+              <Pole number="7">
+                <Real>-184.929</Real>
+                <Imaginary>-36.7847</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>453.0</Value>
+              <Frequency>10.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="3">
+            <Coefficients name="TPR.1982.001.H00" resourceId="Datalogger#20141017204906.113054.734">
+              <InputUnits>
+                <Name>V</Name>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">100.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>6553.6</Value>
+              <Frequency>0.0</Frequency>
+            </StageGain>
+          </Stage>
+        </Response>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>

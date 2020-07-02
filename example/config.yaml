@@ -1,0 +1,43 @@
+dat:
+        #        cat_file: "VOILA_all_1D_cleaned_amplitudes_magnitudes.xml"  # QUAKEML event catalogue
+        cat_file: "test.xml"
+        root_path: "./"  # Root path to waveform and metadata directories
+        # waveform_dir: "local_events"  # Directory containing event waveform directories
+        waveform_dir: "event_waveforms"  # Directory containing event waveform directories
+        metadata_dir: "stations"  # Directory containing station metadata
+        max_gap: 250.0  # Maximum azimuthal gap
+        min_mag: 2.2  # Minimum event magnitude
+        mindepth: 0.0  # Minimum event depth in km
+        maxdepth: 400.0  # Maximum event depth in km
+        evt_blacklist: ["e20160417.064427", "e20160831.223818", "e20161111.204639"]  # Event blacklist
+        sta_blacklist: ["TRNT"]  # Station blacklist
+inv:
+        phases: ["P", "S"]  # Phase names to use
+        prewin_p: 0.1  #  Number of seconds to window before P-wave arrival
+        prewin_s: 0.2  # Number of seconds to window before S-wave arrival
+        wl_p: 5.0  # Window length for P-arrival in seconds # 3s - Stachnik
+        wl_s: 8.0  # Window length for S-arrival in seconds
+        snrcrtp1: [3.0, 4.0, 3.0]  # MIN. [SNR, BANDWIDTH] FOR FINDING BEST P-wave fc
+        snrcrtp2: [2.0, 3.0, 2.0]  # MIN. [SNR, BANDWIDTH] FOR P-wave t* INVERSION
+        snrcrts1: [1.8, 2.0, 1.2]  # MIN. [SNR, BANDWIDTH] FOR BEST S-wave fc
+        snrcrts2: [1.4, 1.0, 1.2]  # MIN. [SNR, BANDWIDTH] FOR S-wave t* INVERSION
+        lincor: [0.7, 0.7, 0.7]  #  MINIMUM LINEAR CORRELATION COEFFICIENTS
+        min_fit_p: 0.80  # Minimum spectral fit to consider P-wave t* observations
+        min_fit_s: 0.80  # Minimum spectral ft to consider S-wave t* observations
+        min_arr_fc: 3  # Miniumum number of high-quality obsrvations to determine corner frequency
+        α: 0.27  # Frequency-dependent exponent
+        Δσ_r: [0.1, 100.0]  # Stress drop range
+        constr_fcs: 1  # Constrain S-wave corner frequency? 0=>No; 1 => fcs = fcp; 2 => fcs = fcp / 1.5
+        fcps: 1.5  # P-to-S corner frequency ratio
+earth_mod:
+        β: 4000.0  # S-wave velocity in m/s for stress drop computation
+        mod_name: "lesserantilles_lb_noupperslow_190618"
+comp:
+        nproc: -1  # Number of cores to use (-1 = choose automatically)
+plt:
+        l2p_fck: False
+        fc_tstar: False
+        summ_case1: False
+        summ_case2: False
+        summ_case3: False
+        show: False

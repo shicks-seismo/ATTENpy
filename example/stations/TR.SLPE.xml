@@ -1,0 +1,167 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.0">
+  <Source>sc3ml import</Source>
+  <Sender>ObsPy Inventory</Sender>
+  <Module>None</Module>
+  <ModuleURI>None</ModuleURI>
+  <Created>2018-03-01T13:43:57.648081</Created>
+  <Network code="TR" restrictedStatus="open" startDate="1980-01-01T00:00:00">
+    <Description>SRC</Description>
+    <Station code="SLPE" endDate="2599-12-31T23:59:59" restrictedStatus="partial" startDate="2000-01-01T00:00:00">
+      <Latitude unit="DEGREES">13.8431</Latitude>
+      <Longitude unit="DEGREES">-60.9952</Longitude>
+      <Elevation>460.0</Elevation>
+      <Site>
+        <Name>St. Lucia, Piton St. Espirit</Name>
+      </Site>
+      <CreationDate>2000-01-01T00:00:00</CreationDate>
+      <TotalNumberChannels>1</TotalNumberChannels>
+      <SelectedNumberChannels>1</SelectedNumberChannels>
+      <Channel code="EHZ" endDate="2599-12-31T23:59:59" locationCode="" restrictedStatus="partial" startDate="2000-01-01T00:00:00">
+        <Comment>
+          <Value>141 41</Value>
+        </Comment>
+        <Latitude unit="DEGREES">13.8431</Latitude>
+        <Longitude unit="DEGREES">-60.995201</Longitude>
+        <Elevation>460.0</Elevation>
+        <Depth>0.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <Dip unit="DEGREES">-90.0</Dip>
+        <Type>GEOPHYSICAL</Type>
+        <SampleRate unit="SAMPLES/S">100.0</SampleRate>
+        <ClockDrift unit="SECONDS/SAMPLE">0.0001</ClockDrift>
+        <CalibrationUnits>
+          <Name>V</Name>
+          <Description>emf in volts</Description>
+        </CalibrationUnits>
+        <Sensor>
+          <Description>Mark Products L4C/University of West Indies SRU 16</Description>
+        </Sensor>
+        <Response>
+          <InstrumentSensitivity>
+            <Value>2181430.0</Value>
+            <Frequency>10.0</Frequency>
+            <InputUnits>
+              <Name>M/S</Name>
+              <Description>velocity in meters per second</Description>
+            </InputUnits>
+            <OutputUnits>
+              <Name>COUNTS</Name>
+              <Description>digital counts</Description>
+            </OutputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros>
+              <InputUnits>
+                <Name>M/S</Name>
+                <Description>velocity in meters per second</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+                <Description>emf in volts</Description>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>1.00005</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">10.0</NormalizationFrequency>
+              <Zero number="0">
+                <Real minusError="0.0" plusError="0.0">0.0</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Zero>
+              <Zero number="1">
+                <Real minusError="0.0" plusError="0.0">0.0</Real>
+                <Imaginary minusError="0.0" plusError="0.0">0.0</Imaginary>
+              </Zero>
+              <Pole number="0">
+                <Real minusError="0.0" plusError="0.0">-4.443</Real>
+                <Imaginary minusError="0.0" plusError="0.0">4.443</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real minusError="0.0" plusError="0.0">-4.443</Real>
+                <Imaginary minusError="0.0" plusError="0.0">-4.443</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>166.532</Value>
+              <Frequency>10.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="2">
+            <PolesZeros>
+              <InputUnits>
+                <Name>V</Name>
+                <Description>emf in volts</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>V</Name>
+                <Description>emf in volts</Description>
+              </OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>6.2179e+16</NormalizationFactor>
+              <NormalizationFrequency unit="HERTZ">10.0</NormalizationFrequency>
+              <Pole number="0">
+                <Real minusError="0.0" plusError="0.0">-24.516</Real>
+                <Imaginary minusError="0.0" plusError="0.0">-123.25</Imaginary>
+              </Pole>
+              <Pole number="1">
+                <Real minusError="0.0" plusError="0.0">-24.516</Real>
+                <Imaginary minusError="0.0" plusError="0.0">123.25</Imaginary>
+              </Pole>
+              <Pole number="2">
+                <Real minusError="0.0" plusError="0.0">-69.816</Real>
+                <Imaginary minusError="0.0" plusError="0.0">-104.48</Imaginary>
+              </Pole>
+              <Pole number="3">
+                <Real minusError="0.0" plusError="0.0">-69.816</Real>
+                <Imaginary minusError="0.0" plusError="0.0">104.48</Imaginary>
+              </Pole>
+              <Pole number="4">
+                <Real minusError="0.0" plusError="0.0">-104.48</Real>
+                <Imaginary minusError="0.0" plusError="0.0">-69.816</Imaginary>
+              </Pole>
+              <Pole number="5">
+                <Real minusError="0.0" plusError="0.0">-104.48</Real>
+                <Imaginary minusError="0.0" plusError="0.0">69.816</Imaginary>
+              </Pole>
+              <Pole number="6">
+                <Real minusError="0.0" plusError="0.0">-123.25</Real>
+                <Imaginary minusError="0.0" plusError="0.0">-24.516</Imaginary>
+              </Pole>
+              <Pole number="7">
+                <Real minusError="0.0" plusError="0.0">-123.25</Real>
+                <Imaginary minusError="0.0" plusError="0.0">24.516</Imaginary>
+              </Pole>
+            </PolesZeros>
+            <StageGain>
+              <Value>13099.4</Value>
+              <Frequency>10.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="3">
+            <Coefficients>
+              <InputUnits>
+                <Name>V</Name>
+                <Description>emf in volts</Description>
+              </InputUnits>
+              <OutputUnits>
+                <Name>COUNTS</Name>
+                <Description>digital counts</Description>
+              </OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+            </Coefficients>
+            <Decimation>
+              <InputSampleRate unit="HERTZ">100.0</InputSampleRate>
+              <Factor>1</Factor>
+              <Offset>0</Offset>
+              <Delay>0.0</Delay>
+              <Correction>0.0</Correction>
+            </Decimation>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>10.0</Frequency>
+            </StageGain>
+          </Stage>
+        </Response>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>
