@@ -192,16 +192,16 @@ def main_event_waveforms(cfg, iter, cat):
                 channel_read = "T"
 
             # Read in velocity waveforms
-            log.write("Reading in waveforms")
-            wave_file = ("{0:}/{1:}/{2:}/{2:}.{3:}.{4:}.*{5:}.msd".format(
-                cfg.dat.root_path, cfg.dat.waveform_dir, a_event.origin_id,
-                a_arrival.network, a_arrival.station, channel_read))
-            try:
-                vel_instcorr = read(wave_file, format="MSEED")
-            except Exception:
-                log.write("Could not read in velocity waveform file: {:}\n"
-                          .format(wave_file))
-                continue
+            #log.write("Reading in waveforms")
+            #wave_file = ("{0:}/{1:}/{2:}/{2:}.{3:}.{4:}.*{5:}.msd".format(
+            #    cfg.dat.root_path, cfg.dat.waveform_dir, a_event.origin_id,
+            #    a_arrival.network, a_arrival.station, channel_read))
+            #try:
+            #    vel_instcorr = read(wave_file, format="MSEED")
+            #except Exception:
+            #    log.write("Could not read in velocity waveform file: {:}\n"
+            #              .format(wave_file))
+            #    continue
 
             # Read in displacement waveforms
             wave_file = ("{0:}/{1:}/{2:}/{2:}.{3:}.{4:}.*{5:}_DIS.msd".format(
