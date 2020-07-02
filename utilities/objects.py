@@ -1,15 +1,27 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Classes for passing objects between functions.
+
+@author: Stephen Hicks, Imperial College London.
+@date: July 2020.
+"""
 
 
 class Atten_DB:
+    """Parent database containing events."""
+
     def __init__(self, Aevents=None):
         self.Aevents = Aevents or []
 
     def __getitem__(self, index):
+        """Docstring."""
         return self.Aevents[index]
 
 
 class AEvent:
+    """Event structure."""
+
     def __init__(self, origin_id, origins=None, mag=None,
                  magnitude_type=None,
                  p_arrivals_HQ=[], p_arrivals_LQ=[],
@@ -31,13 +43,29 @@ class AEvent:
         self.fc_p = fc_p or 99999.0
         self.fc_s = fc_s or 99999.0
         self.alpha_p = alpha_p or 99999.0
-        self.lnMo_p = lnMo_p or 99999.0
         self.Mw_s = Mw_s or 99999.0
         self.alpha_s = alpha_s or 99999.0
-        self.lnMo_s = lnMo_s or 99999.0
+
+    def to_dict(self):
+        """Convert to dictionary - e.g. for making Pandas DataFrame."""
+        return {
+            'evt_id': self.origin_id, 'orig_time': self.origins[0].time,
+            'lat': self.origins[0].latitude, 'lon': self.origins[0].longitude,
+            'dep': self.origins[0].depth_km,
+            'ML': self.mag, 'Mw_p': self.Mw_p, 'Mw_s': self.Mw_s,
+            'fc_p': self.fc_p, 'fc_s': self.fc_s, 
+            'no_p_hq': len(self.p_arrivals_HQ),
+            'no_s_hq': len(self.s_arrivals_HQ),
+            'no_p_lq': len(self.p_arrivals_LQ),
+            'no_s_lq': len(self.s_arrivals_LQ),
+            'no_p_lq_fit': len(self.p_arrivals_LQ_fitting), 
+            'no_s_lq_fit': len(self.s_arrivals_LQ_fitting)
+            }
 
 
 class Aorigin:
+    """Earthquake origin structure."""
+
     def __init__(self, time, latitude, longitude, depth_km, Mo=None,
                  alpha=None, beta_src=None):
         self.time = time or []
@@ -48,6 +76,8 @@ class Aorigin:
 
 
 class Aarrival:
+    """Phase arrival structure."""
+
     def __init__(self, network, station, channel, station_lat, station_lon,
                  station_ele, back_azimuth, time, phase, correction, data=None,
                  aspectrum=None, sig_win=None, noise_win=None, tstar=None,
@@ -74,7 +104,10 @@ class Aarrival:
         self.err = err or 99999.0
         self.fitting = fitting or 99999.0
 
+
 class Adata:
+    """Waveform data structure."""
+
     def __init__(self, vel_corr, dis_corr, signal_vel_corr, noise_vel_corr):
         self.vel_corr = vel_corr
         self.dis_corr = dis_corr
@@ -83,6 +116,8 @@ class Adata:
 
 
 class Aspectrum:
+    """Waveform spectrum structure."""
+
     def __init__(self, freq_all=None, sig_full_dis=None, noise_dis=None,
                  SNR=None, freq_good=None,  sig_good_dis=None, fr_good=None):
         self.freq_all = freq_all or []
@@ -92,4 +127,3 @@ class Aspectrum:
         self.freq_good = freq_good or []
         self.sig_good_dis = sig_good_dis or []
         self.fr_good = fr_good or []
-

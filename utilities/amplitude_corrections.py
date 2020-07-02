@@ -1,39 +1,60 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Functions for computing spectral waveform corrections.
 
-import os
-import numpy as np
-import obspy.taup
+@author: Stephen Hicks, Imperial College London.
+@date: July 2020.
+"""
+
 
 def vel2dens(vp):
-	"""
-	Coefficients from Nafe-Drake curve (Brocher, 2005 BSSA) for Vp < 8.5 km/s
-    Use linear Birch law approximation for Vp > 8.5 km/s
-	"""
-	rho = ((1.6612 * vp - 0.4721 * vp**2 + 0.0671 * vp**3
-		              - 0.0043 * vp**4 + 0.00011 * vp**5) * 1000.0)
-	return(rho)
+    """
+    Coefficients from Nafe-Drake curve (Brocher, 2005 BSSA) for Vp < 8.5 km/s.
+
+    Parameters
+    ----------
+    vp : float
+        P-wave velocity in km/s.
+
+    Returns
+    -------
+    rho : float
+        Density in kg.m^-3
+
+    """
+    rho = ((1.6612 * vp - 0.4721 * vp**2 + 0.0671 * vp**3
+            - 0.0043 * vp**4 + 0.00011 * vp**5) * 1000.0)
+    return(rho)
 
 
-def amplitude_correction(mod_name, dist, z_src, phase):
+def amplitude_correction(mod_name, Δ, z_src, phase):
     """
-    Inputs:
-        - mod_name = name of velocity model (e.g. iasp91)
-        - dist = epicentral distance (degrees)
-        - z_src = source depth (km)
-        - phase = seismic phase (currently supports body waves "P" and "S";
-          needs to be upper case)
-    Internal parameters:
-        - v[p|s]_[s|r] = P-wave/S-wave velocity at source/receiver (km/s)
-        - rho[s|r] = Layer density at source/receiver (kg/m^3)
-        - i_0 = Incidence angle at receiver (rad)
-        - i_h = Take-off angle at source (rad)
-        - dihddel = change in incident angle with distance (rad/rad)
-        - p = Horiz. slowness (ray parameter) in layered Earth (not spherical)
-    Output parameters:
+    Compute amplitude correction.
+
+    Parameters
+    ----------
+    mod_name : str
+        Name of velocity model for TauP (e.g. "iasp91").
+    Δ : float
+        Epicentral distance (degrees).
+    z_src : float
+        Source depth in km.
+    phase : str
+        Name of phase "P", "S".
+
+    Returns
+    -------
+    amom : float
+        Correction factor.
+
     """
+    import os
+    import numpy as np
+    import obspy.taup
 
     # Set constants
-    del_inc = 0.1  # Increment for del to calculate dihddel
+    Δ_inc = 0.1  # Increment in degrees for del to calculate dihddel
     rad_E = 6371.0  # Earth radius
     # End of constants
 
@@ -62,41 +83,31 @@ def amplitude_correction(mod_name, dist, z_src, phase):
     vp_r = vel_table[0][1]
     vs_r = vel_table[0][2]
 
-    # 2. Compute density at source and receiver #############################
-    # Coefficients from Nafe-Drake curve (Brocher, 2005 BSSA) for Vp < 8.5 km/s
-    # Use linear Birch law approximation for Vp > 8.5 km/s
+    # 2. Compute density at source and receiver
     rho_s = vel2dens(vp_s)
     rho_r = vel2dens(vp_r)
 
-    # 2. Now do geometric spreading correction ################################
+    # Now do geometric spreading correction ################################
     # Get first arrival from TauP for incidence angle and ray param
     taup_model = obspy.taup.TauPyModel(model=mod_name)
     arrival = taup_model.get_travel_times(source_depth_in_km=z_src,
-                                          distance_in_degree=dist,
+                                          distance_in_degree=Δ,
                                           phase_list=phases)[0]
 
     # Estimate dih/dΔ (dihdel) - change of takeoff angle with distance
-    if dist - del_inc >= 0:
-        dist_1 = dist - del_inc
+    if Δ - Δ_inc >= 0:
+        Δ_1 = Δ - Δ_inc
     else:
-        dist_1 = 0.0
-    try:
-        ang_toff_1 = taup_model.get_travel_times(
-            source_depth_in_km=z_src, distance_in_degree=dist_1,
-            phase_list=phases)[0].takeoff_angle
-    except:
-        amom = 0.0
-        return amom
-    dist_2 = dist + del_inc
-    try:
-        ang_toff_2 = taup_model.get_travel_times(
-            source_depth_in_km=z_src, distance_in_degree=dist_2,
-            phase_list=phases)[0].takeoff_angle
-    except:
-        amom = 0.0
-        return amom
-    dihddel = np.abs(np.deg2rad(ang_toff_2 - ang_toff_1) /
-                     np.deg2rad(dist_2 - dist_1))
+        Δ_1 = 0.0
+    ang_toff_1 = taup_model.get_travel_times(
+        source_depth_in_km=z_src, distance_in_degree=Δ_1,
+        phase_list=phases)[0].takeoff_angle
+    Δ_2 = Δ + Δ_inc
+    ang_toff_2 = taup_model.get_travel_times(
+        source_depth_in_km=z_src, distance_in_degree=Δ_2,
+        phase_list=phases)[0].takeoff_angle
+    dihddel = np.abs(
+        np.deg2rad(ang_toff_2 - ang_toff_1) / np.deg2rad(Δ_2 - Δ_1))
 
     # Compute angles and slowness. i_0 = incidence angle; i_h = take-off angle
     i_0 = np.deg2rad(arrival.incident_angle)
@@ -110,13 +121,13 @@ def amplitude_correction(mod_name, dist, z_src, phase):
         v_source = vs_s
         v_rec = vs_r
 
-    # Calculate geometric spreading correction
-	# Equation 8.70 of Lay and Wallace
+    # 1. Calculate geometric spreading correction.
+    # Equation 8.70 of Lay and Wallace.
     g = np.sqrt(
         (rho_s * v_source * np.sin(i_h) * dihddel) /
-        (rho_r * v_rec * np.sin(np.deg2rad(dist)) * np.cos(i_0)))
+        (rho_r * v_rec * np.sin(np.deg2rad(Δ)) * np.cos(i_0)))
 
-    # 3. Now do free surface correction ######################################
+    # 2. Now do free surface correction ######################################
     # Aki & Richards; Kennett (1991, GJI = EQ15); Yoshimoto et al (1997, PEPI)
     if phase == "P":
         p = arrival.ray_param / rad_E   # Convert s/rad-> s/km . 1 rad = rad_E
@@ -124,7 +135,7 @@ def amplitude_correction(mod_name, dist, z_src, phase):
         q_s0 = np.sqrt(vs_r**-2 - p**2)   # Vertical S-wave slowness
         # Calculate the denominator for the slowness-dependent quantities
         # Also known as the Rayleigh function (Cerveny)
-        rayleighf = (q_s0**2 - p**2)**2 + 4* p**2 * q_p0 * q_s0
+        rayleighf = (q_s0**2 - p**2)**2 + 4 * p**2 * q_p0 * q_s0
         rpz = 2 * vp_r * q_p0 * (q_s0**2 - p**2) / (vs_r**2) / rayleighf
         U = rpz
 #    elif phase == "SV":
@@ -133,7 +144,7 @@ def amplitude_correction(mod_name, dist, z_src, phase):
     elif phase == "S":  # Use SH as we are using transverse component
         U = 2.0
 
-    # 4. Now compute the RMS (spherical average) Radiation pattern
+    # 3. Now compute the RMS (spherical average) Radiation pattern
     if phase == "P":
         radp = np.sqrt(4.0 / 15.0)
     elif phase == "S":
@@ -142,5 +153,4 @@ def amplitude_correction(mod_name, dist, z_src, phase):
     # 5. Now combine into single correction (units: m)
     amom = (g * radp * U) / (4 * np.pi * rho_s * (rad_E * 1000) *
                              (v_source*1000)**3)
-    
     return amom

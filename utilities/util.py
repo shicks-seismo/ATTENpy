@@ -14,12 +14,9 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 import matplotlib
 
-matplotlib.use('Agg')
-matplotlib.pyplot.ioff()
-
-font = {'family': 'DejaVu Sans',
+font = {'family': 'Arial',
         'weight': 'normal',
-        'size':    15}
+        'size':    7}
 matplotlib.rc('font', **font)
 
 
@@ -87,7 +84,7 @@ def get_station_locations(station_file):
     return STATIONS
 
 
-def calc_spec(P_signal, P_noise, snrcrt, linresid, nyquist_frac):
+def calc_spec(P_signal, P_noise, snrcrt, linresid):
     """
     Calculate multi-taper spectrum
     """
@@ -112,8 +109,8 @@ def calc_spec(P_signal, P_noise, snrcrt, linresid, nyquist_frac):
     if smlen > 0:
         SNR_smooth = smooth(SNR, smlen)
 
-    # Set maximum frequency of spectrum
-    f_max = nyquist_frac * P_signal[0].stats.sampling_rate / 2
+    # Set maximum frequency of spectrum  0.9 is the Nyquist fraction
+    f_max = 0.90 * P_signal[0].stats.sampling_rate / 2
 
     (begind, endind, frminp, frmaxp, frangep) = longest_segment(
         SNR_smooth, snrcrt, freq_sig, f_max)
@@ -138,6 +135,36 @@ def calc_spec(P_signal, P_noise, snrcrt, linresid, nyquist_frac):
 
     return(freq_all, spec_sig_disp, spec_noise_disp, SNR_smooth,
            freq_px, spec_px, fr_good, goodP)
+
+
+def filter_cat(cat, cfg):
+    """
+    Sort and filter event catalog.
+
+    Parameters
+    ----------
+    cat : obspy.core.event.catalog
+        Unfiltered catalog.
+    cfg : obj
+        Input data configuration options.
+
+    Returns
+    -------
+    cat_final : obspy.core.event.catalog
+        Filtered catalog.
+
+    """
+    from obspy.core.event import Catalog
+    cat = Catalog(sorted(cat, key=lambda x: x.preferred_origin().time))
+    cat = cat.filter("magnitude > {:}".format(cfg.min_mag),
+                     "azimuthal_gap < {:}".format(cfg.max_gap))
+    cat_final = Catalog()
+    for evt in cat:
+        orig = evt.preferred_origin()
+        if (len(orig.arrivals) > 5
+                and evt.event_descriptions[0].text not in cfg.sta_blacklist):
+            cat_final.append(evt)
+    return cat_final
 
 
 def get_fc_range(d_stress_minmax, Mo_Nm, src_beta):
@@ -197,7 +224,7 @@ def longest_segment(snr, _snrcrt, freq_sig, maxf, minf=0.05):
 
     # Find starting and end point indices of freqency array
     ind1 = int(min(np.nonzero(freq_sig >= minf)[0]))
-    # ind2 = int(max(np.nonzero(freq_sig < maxf)[0]))
+    ind2 = int(max(np.nonzero(freq_sig < maxf)[0]))
 
     snrcrt = _snrcrt[0]
     w = 0
@@ -291,7 +318,18 @@ def longest_segment(snr, _snrcrt, freq_sig, maxf, minf=0.05):
     endind = eindex[longest]
 
     # Extend frequency band to low SNR
-
+    if _snrcrt[2] < _snrcrt[0]:
+        if begind > ind1 + 1:
+            while (snr[begind-1] < snr[begind] and snr[begind-1] > _snrcrt[2]
+                   and begind-1 > ind1 + 1):
+                begind = begind-1
+        if endind < ind2 - 1:
+            while (snr[endind+1] < snr[endind] and snr[endind+1] > _snrcrt[2]
+                   and endind+1 < ind2 - 1):
+                endind = endind + 1
+        frmin = freq_sig[begind]
+        frmax = freq_sig[endind]
+        frange = frmax - frmin
     return begind, endind, frmin, frmax, frange
 
 
@@ -309,8 +347,8 @@ def Mw_scaling(scale_type, M_in):
     return Mw
 
 
-def plotsumm(event, arrival, snrcrt, icase, alpha_, work_dir):
-
+def plotsumm(event, arrival, snrcrt, icase, alpha_, show):
+    from matplotlib.gridspec import GridSpec
     Tpre = 2
 
     origin = event.origins[0]
@@ -324,149 +362,156 @@ def plotsumm(event, arrival, snrcrt, icase, alpha_, work_dir):
         Mw = event.Mw_s
         lnmo = event.lnMo_s
 
-    plt.clf()
-    fig = plt.figure(3, figsize=(16.50, 16.5))
+    fig = plt.figure(figsize=(9, 5.5))
+    gs = GridSpec(2, 4)
     network = arrival.data[0].vel_corr[0].stats.network
     station = arrival.data[0].vel_corr[0].stats.station
     channel = arrival.data[0].vel_corr[0].stats.channel
-    plt.suptitle("{:}\n{:}.{:}.{:}".format(event.origin_id, network, station,
-                                           channel), fontsize="large")
+    plt.suptitle("Origin time: {:}  $M_L$ = {:3.1f}\n"
+                 "NET.STA.CHA: {:}.{:}.{:}\n{:}-wave\n{:}".format(
+        event.origins[0].time.isoformat(), event.mag, network, station, channel, arrival.phase, arrival.fit))
     # Corrected, unfiltered velocity
-    ax1 = plt.subplot2grid((4, 4), (0, 0), colspan=3)
-    trim = arrival.data[0].vel_corr[0].slice(arrival.noise_win[0]-Tpre,
-                                             arrival.sig_win[1]+Tpre)
-    ax1.plot(trim.times(reftime=origin.time), trim.data/1e-9, "b-")
-    i, j = ax1.get_ylim()
-    ax1.vlines(arrival.time-origin.time, i, j, label="Onset")
-    ax1.axvspan(arrival.sig_win[0]-origin.time,
-                arrival.sig_win[1]-origin.time,
-                label="Signal window", alpha=0.5, color="red")
-    ax1.axvspan(arrival.noise_win[0]-origin.time,
-                arrival.noise_win[1]-origin.time,
-                label="Noise window", alpha=0.5, color="green")
-    ax1.text(0.02, 0.95, "Instrument-corrected, unfiltered "
-                         "velocity waveform",
-             transform=ax1.transAxes, fontdict=dict(
-                 fontsize="medium", ha='left', va='top'),
-             bbox=dict(boxstyle="round", fc="w", alpha=0.8))
-    ax1.set_xlabel("Time relative to origin (s)")
-    ax1.set_ylabel("Velocity (nm/s)")
-    ax1.legend(loc='lower left')
+    #ax1 = plt.subplot2grid((4, 4), (0, 0), colspan=3)
+    #trim = arrival.data[0].vel_corr[0].slice(arrival.noise_win[0]-Tpre,
+    #                                         arrival.sig_win[1]+Tpre)
+    #ax1.plot(trim.times(reftime=origin.time), trim.data/1e-9, "b-")
+    #i, j = ax1.get_ylim()
+    #ax1.vlines(arrival.time-origin.time, i, j, label="Onset")
+    #ax1.axvspan(arrival.sig_win[0]-origin.time,
+    #            arrival.sig_win[1]-origin.time,
+    #            label="Signal window", alpha=0.5, color="red")
+    #ax1.axvspan(arrival.noise_win[0]-origin.time,
+    #            arrival.noise_win[1]-origin.time,
+    #            label="Noise window", alpha=0.5, color="green")
+    #ax1.text(0.02, 0.95, "Instrument-corrected, unfiltered "
+    #                     "velocity waveform",
+    #         transform=ax1.transAxes,
+    #         bbox=dict(boxstyle="round", fc="w", alpha=0.8))
+    #ax1.set_xlabel("Time relative to origin (s)")
+    #ax1.set_ylabel("Velocity (nm/s)")
+    #ax1.legend(loc='lower left')
 
     # Corrected, filtered displacement
-    ax2 = plt.subplot2grid((4, 4), (1, 0), colspan=3)
+    ax2 = fig.add_subplot(gs[0,0:3])
     if len(arrival.data[0].dis_corr) != 0:
         trim = (arrival.data[0].dis_corr[0].filter(
             'bandpass', freqmin=spectrum.fr_good[0],
             freqmax=spectrum.fr_good[1]).detrend(type="demean")
             .slice(arrival.noise_win[0]-Tpre, arrival.sig_win[1]+Tpre))
-        ax2.plot(trim.times(reftime=origin.time), trim.data/1e-9, "b-")
+        ax2.plot(trim.times(reftime=origin.time), trim.data/1e-9, "b-", lw=1)
     i, j = ax2.get_ylim()
-    ax2.vlines(arrival.time-origin.time, i, j, label="Onset")
+    ax2.vlines(arrival.time-origin.time, i, j, linestyle="--",
+               label="Picked onset")
     ax2.axvspan(arrival.sig_win[0]-origin.time,
                 arrival.sig_win[1]-origin.time,
-                label="Signal window", alpha=0.5, color="red")
+                label="Signal window", alpha=0.25, color="red")
     ax2.axvspan(arrival.noise_win[0]-origin.time,
                 arrival.noise_win[1]-origin.time,
-                label="Noise window", alpha=0.5, color="green")
-    ax2.text(0.02, 0.95, "Instrument-corrected, filtered "
-                         "displacement waveform",
-             transform=ax2.transAxes, fontdict=dict(
-                 fontsize="medium", ha='left', va='top'),
+                label="Noise window", alpha=0.25, color="green")
+    ax2.text(0.02, 0.9, "a) Instrument-corrected, filtered "
+                         "displacement waveform", fontsize=8,
+             transform=ax2.transAxes,
              bbox=dict(boxstyle="round", fc="w", alpha=0.8))
     ax2.set_xlabel("Time relative to origin (s)")
     ax2.set_ylabel("Displacement (nm)")
     ax2.legend(loc='lower left')
 
     # SNR vs. freq
-    ax3 = plt.subplot2grid((4, 4), (2, 0), colspan=3)
-    ax3.plot(spectrum.freq_sig, 20*np.log10(spectrum.SNR))
-    ax3.set_ylabel("20log10(SNR) (dB)")
-    ax3.set_xlabel("Frequency (Hz)", fontsize="large")
-    i, j = ax3.get_xlim()
+    #ax3 = plt.subplot2grid((4, 4), (2, 0), colspan=3)
+    #ax3.plot(spectrum.freq_sig, 20*np.log10(spectrum.SNR))
+    #ax3.set_ylabel("20log10(SNR) (dB)")
+    #ax3.set_xlabel("Frequency (Hz)")
+    #i, j = ax3.get_xlim()
 #    ax3.hlines(20*np.log10(snrcrt[0]), i, j, label="HQ threshold",
 #               linestyle="--", color="red")
-    ax3.hlines(20*np.log10(snrcrt[0]), i, j, label="LQ threshold",
-               linestyle="--", color="blue")
-    ax3.set_xlim(0, 25)
-    ax3.text(0.02, 0.95, "Signal-to-noise ratio", transform=ax3.transAxes,
-             fontdict=dict(fontsize="medium", ha='left', va='top'),
-             bbox=dict(boxstyle="round", fc="w", alpha=0.8))
-    ax3.legend(loc='upper right')
+ #              linestyle="--", color="blue")
+#    #ax3.hlines(20*np.log10(snrcrt[0]), i, j, label="LQ threshold",
+ #   ax3.set_xlim(0, 25)
+ #   ax3.text(0.02, 0.95, "Signal-to-noise ratio", transform=ax3.transAxes,
+ #            bbox=dict(boxstyle="round", fc="w", alpha=0.8))
+ #   ax3.legend(loc='upper right')
 
     # Spectra
-    ax4 = plt.subplot2grid((4, 4), (3, 0), colspan=3)
-    ax4.semilogy(spectrum.freq_sig, spectrum.sig_full_dis/1e-9,
-                 label="Signal", color="red")
+    ax4 = fig.add_subplot(gs[1, 0:3])
+    ax4.grid()
+    ax4.semilogy(spectrum.freq_sig, spectrum.sig_full_dis/1e-9, label="Signal",
+                 color="red")
     ax4.semilogy(spectrum.freq_sig, spectrum.noise_dis/1e-9, label="Noise",
                  color="green")
-    ax4.semilogy(spectrum.freq_good, spectrum.sig_good_dis/1e-9,
-                 label="Good signal", linestyle="--")
+    #ax4.semilogy(spectrum.freq_good, spectrum.sig_good_dis/1e-9,
+    #             label="Good signal", linestyle="--")
     if icase > 1:
         synspec = (arrival.correction * np.exp(lnmo)
                    * np.exp(-np.pi * spectrum.freq_sig
                             * (spectrum.freq_sig**(-alpha_))*arrival.tstar) /
                    (1+(spectrum.freq_sig/fc)**2))
         ax4.semilogy(spectrum.freq_sig, synspec/1e-9,
-                     label="Synthetic fit")
+                     label="Synthetic fit", linestyle="--", zorder=20)
     ax4.set_ylabel('Displacement (nm)')
     ax4.set_xlabel('Frequency (Hz)')
     i, j = ax4.get_ylim()
-    ax4.vlines(spectrum.fr_good, i, j)
-    ax4.set_xlim(0, 25)
+    ax4.vlines(spectrum.fr_good, i, j, label="Signal-to-noise ratio limits",
+               linestyle="dotted")
+    ax4.set_xlim(0, 24)
     if arrival.phase == "P":
         ax4.set_ylim(10**-2, 10**3.5)
     elif arrival.phase == "S":
-        ax4.set_ylim(10**-2, 10**4)
+        ax4.set_ylim(10**-2, 10**5)
     ax4.legend(loc='upper right')
-    ax4.text(0.02, 0.95, "Amplitude spectrum", transform=ax4.transAxes,
-             fontdict=dict(fontsize="medium", ha='left', va='top'),
-             bbox=dict(boxstyle="round", fc="w", alpha=0.8))
+    ax4.text(0.5, 0.9, "$t^*_{:}$ = {:.3f}$\pm${:.3f}\n1000/Q = {:3.0f}".format(
+        arrival.phase, arrival.tstar, arrival.err, 1000*arrival.tstar_pathave), transform=ax4.transAxes,
+             bbox=dict(boxstyle="round", fc="w", alpha=0.8), va="top")
+    ax4.text(0.02, 0.9, "b) Amplitude spectrum", transform=ax4.transAxes,
+             bbox=dict(boxstyle="round", fc="w", alpha=0.8), fontsize=8)
 
     # Map
-    ax5 = plt.subplot2grid((4, 4), (0, 3), rowspan=3)
-    ax5.set_title("Event to station path")
+    ax5 = fig.add_subplot(gs[:, 3])
+    ax5.set_title("c) Event to station path", fontsize=8)
     map = Basemap(projection='mill',
-                  llcrnrlon=-63, llcrnrlat=10, urcrnrlon=-59,
-                  urcrnrlat=18.8, resolution="i")
-    map.fillcontinents(color='gray')
+                  llcrnrlon=-63.5, llcrnrlat=9, urcrnrlon=-58,
+                  urcrnrlat=19, resolution="i")
+    map.shadedrelief()
     map.drawcoastlines()
+    map.readshapefile("/Users/sph1r17/Downloads/PB2002_boundaries", color="k",
+                       name='tectonic_plates', drawbounds=True)
+    map.drawparallels(np.arange(-90,90, 2), labels=[1,0,0,0])
+    map.drawmeridians(np.arange(-180,180,2),labels=[0,0,0,1])
     x_sta, y_sta = map(arrival.station_lon, arrival.station_lat)
-    map.plot(x_sta, y_sta, "^", markersize=5, linewidth=0.5)
+    ax5.scatter(x_sta, y_sta, s=50, marker="^", linewidth=0.5, zorder=10,
+             edgecolor="k", c="white", label="Station")
     x_evt, y_evt = map(origin.longitude, origin.latitude)
-    map.plot(x_evt, y_evt, "*", markersize=5, linewidth=0.5)
-    plt.text(x_evt*1.10, y_evt, "Z = {:3.0f} km".format(origin.depth_km))
+    ax5.scatter(x_evt, y_evt, s=50, marker="*", linewidth=0.5, zorder=10,
+             edgecolor="k", c="red", label="Epicentre")
+    ax5.text(x_evt*1.10, y_evt, "Z = {:3.0f} km".format(origin.depth_km))
     map.plot([x_sta, x_evt], [y_sta, y_evt])
+    ax5.legend(loc="lower right")
+    
 
-    ax6 = plt.subplot2grid((4, 4), (3, 3), rowspan=1)
-    ax6.text(0, 0.98, "fc = {:3.1f} Hz\n{:} = {:2.1f}\n"
-                      "Mw = {:3.1f}\nt* = {:5.3f}\nfit = {:4.2f}"
-             .format(fc, event.magnitude_type, event.mag, event.Mw_p,
-                     arrival.tstar, arrival.fit),
-             transform=ax6.transAxes, fontdict=dict(
-                 fontsize="medium", ha='left', va='top'),
-             bbox=dict(boxstyle="round", fc="w", alpha=0.8))
-    ax6.axis("off")
+    #ax6 = plt.subplot2grid((4, 4), (3, 3), rowspan=1)
+    #ax6.text(0, 0.98, "fc = {:3.1f} Hz\n{:} = {:2.1f}\n"
+    #                  "Mw = {:3.1f}\nt* = {:5.3f}\nfit = {:4.2f}"
+    #         .format(fc, event.magnitude_type, event.mag, event.Mw_p,
+    #                 arrival.tstar, arrival.fit),
+    #         transform=ax6.transAxes,
+ #   ax6.axis("off")
+#    #         bbox=dict(boxstyle="round", fc="w", alpha=0.8))
 
-    if not os.path.exists('{:}/figures/{:}'.format(
-            work_dir, str(event.origin_id).split('/')[-1])):
-        os.makedirs('{:}/figures/{:}'.format(work_dir,
-            str(event.origin_id).split('/')[-1]))
-
-    plt.savefig("{:}/figures/{:}/{:}.{:}.case{:}.png".format(
-        work_dir, str(event.origin_id).split('/')[-1],
-        arrival.station, arrival.phase, icase), transparent=True, dpi=300)
-    plt.gcf().subplots_adjust(bottom=0.25)
-    plt.tight_layout(rect=[0.03, 0.03, 0.90, 0.90])
-    fig.clf()
+    if show:
+        plt.show()
+    else:
+        plt.savefig("output/figures/{:}/{:}.{:}.case{:}.png".format(
+            str(event.origin_id).split('/')[-1],
+            arrival.station, arrival.phase, icase), transparent=True, dpi=300)
+        plt.gcf().subplots_adjust(bottom=0.25)
+        fig.clf()
 
 
-def plot_corner_freq(result, L2all, bestresult, phase, event, work_dir):
+def plot_corner_freq(result, L2all, bestresult, phase, event, show):
     """
     Plot norm vs corner frequency and moment vs corner frequency
     """
-    plt.clf()
-    fig = plt.figure(1, figsize=(8, 12))
+    #plt.clf()
+    fig = plt.figure(1, figsize=(8, 8))
     fig.subplots_adjust(wspace=0.3, hspace=0.3)
     ax1 = fig.add_subplot(1, 2, 1)
     ax1.plot(result[:, 0], L2all, 'b*-')
@@ -481,17 +526,15 @@ def plot_corner_freq(result, L2all, bestresult, phase, event, work_dir):
              'r^', ms=10)
     ax2.set_xlabel('Corner Frequency (Hz)')
     ax2.set_ylabel('Mw')
-    if not os.path.exists('{:}/figures/{:}'.format(
-            work_dir, str(event.origin_id).split('/')[-1])):
-        os.makedirs('{:}/figures/{:}'.format(
-            work_dir, str(event.origin_id).split('/')[-1]))
-
-    plt.savefig("{:}/figures/{:}/Fc_norm-{:}.png".format(
-        work_dir, str(event.origin_id).split('/')[-1], phase))
+    if show:
+        plt.show()
+    else:
+        plt.savefig("output/figures/{:}/Fc_norm-{:}.png".format(
+            str(event.origin_id).split('/')[-1], phase))
 
 
 def plot_corner_freq_v_tstar(bestresult, phase, arrivals, tsfc, fcrange,
-                             event, work_dir):
+                             event, show):
     """
     Plot t* vs corner frequency for each station
     """
@@ -505,13 +548,12 @@ def plot_corner_freq_v_tstar(bestresult, phase, arrivals, tsfc, fcrange,
         plt.plot(bestresult[0], tspert[fcrange == bestresult[0]], 'r^', ms=10)
         plt.xlabel('{:}-wave corner frequency (Hz)'.format(phase))
         plt.ylabel('t* perturbation (%)')
-        if not os.path.exists('{:}/figures/{:}'.format(
-                work_dir, str(event.origin_id).split('/')[-1])):
-            os.makedirs('{:}/figures/{:}'.format(
-                work_dir, str(event.origin_id).split('/')[-1]))
-        plt.savefig("{:}/figures/{:}/Fc-tstar-{:}-{:}.jpg".format(
-            work_dir, str(event.origin_id).split('/')[-1],
-            phase, arrivals[n].station))
+        if show:
+            plt.show()
+        else:
+            plt.savefig("output/figures/{:}/Fc-tstar-{:}-{:}.jpg".format(
+                str(event.origin_id).split('/')[-1],
+                phase, arrivals[n].station))
 
 
 def get_Svel_source(mod_name, z_src):
@@ -542,9 +584,9 @@ def get_Svel_source(mod_name, z_src):
     return beta_src * 1000.0
 
 
-def buildG(a_event, alpha, POS, icase):
+def buildG(a_event, α, POS, icase):
     """
-    Build G matrix
+    Build G matrix.
     """
 
     if POS == "P" and icase == 1:
@@ -561,25 +603,18 @@ def buildG(a_event, alpha, POS, icase):
         arrivals = a_event.s_arrivals_LQ_fitting
 
     for i_arr, arrival in enumerate(arrivals):
-        for alco in range(len(alpha)):
-            freq_x = arrival.aspectrum.freq_good
-            exponent = -1 * np.pi * freq_x * (freq_x ** (-1*alpha[alco]))
-            exponent = np.array([exponent]).transpose()
-            if alco == 0:
-                Gblock = np.atleast_3d(exponent)
-
-            if i_arr == 0:
-                G = Gblock
-            else:
-                oldblock = np.hstack((G, np.zeros((G.shape[0], 1,
-                                                   len(alpha)))))
-                newblock = np.hstack((
-                    np.zeros((Gblock.shape[0], G.shape[1], len(alpha))),
+        freq_x = arrival.aspectrum.freq_good
+        exponent = -1 * np.pi * freq_x * (freq_x ** (-1*α))
+        Gblock = np.array([exponent]).transpose()
+        if i_arr == 0:
+            G = Gblock
+        else:
+            oldblock = np.hstack((G, np.zeros((G.shape[0], 1))))
+            newblock = np.hstack((
+                np.zeros((Gblock.shape[0], G.shape[1])),
                     Gblock))
-                G = np.vstack((oldblock, newblock))
-
-    G = np.hstack((np.ones((G.shape[0], 1, len(alpha))), G))
-
+            G = np.vstack((oldblock, newblock))
+    G = np.hstack((np.ones((G.shape[0], 1)), G))
     return G
 
 
@@ -616,31 +651,28 @@ def buildd(a_event, fc, POS, icase, lnM=0):
     return data
 
 
-def invert_tstar(a_event, fc, phase, alpha, bestalpha, constrainMoS, icase):
+def invert_tstar(a_event, fc, phase, α, constr_MoS, icase):
     """
     Invert t* etc
     """
     data = buildd(a_event, fc, phase, icase)
-    G = buildG(a_event, alpha, phase, icase)
-    ialco = alpha.index(bestalpha)
-    Ginv = np.linalg.inv(
-        np.dot(G[:, :, ialco].transpose(), G[:, :, ialco]))
+    G = buildG(a_event, α, phase, icase)
+    Ginv = np.linalg.inv(np.dot(G[:, :].transpose(), G[:, :]))
     try:
-        model, residu = nnls(G[:, :, ialco], data[:, 0])
+        model, residu = nnls(G[:, :], data[:, 0])
     except:
         print(data[:, 0])
-    if constrainMoS == 0:
-        lnmomen = model[0]
-    else:
-        lnmomen = a_event.lnMo_p
+    #if constr_MoS == 0:
+    lnmomen = model[0]
+    #else:
+    #    lnmomen = a_event.lnMo_p
     tstar = model[1:]
     L2P = residu / np.sum(data[:, 0])
     vardat = residu / np.sqrt(data[:, 0].shape[0] - 2)
     lnmomenErr = np.sqrt(vardat*Ginv[0][0])
-    estdataerr = np.dot(G[:, :, ialco], model)
+    estdataerr = np.dot(G[:, :], model)
     tstarerr = np.sqrt(vardat * Ginv.diagonal()[1:])
-
-    return (data, ialco, model, residu, lnmomen, tstar, G, Ginv, vardat,
+    return (data, model, residu, lnmomen, tstar, G, Ginv, vardat,
             lnmomenErr, estdataerr, tstarerr, L2P)
 
 
