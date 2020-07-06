@@ -503,7 +503,7 @@ def plotsumm(event, arrival, snrcrt, icase, alpha_, show):
             str(event.origin_id).split('/')[-1],
             arrival.station, arrival.phase, icase), transparent=True, dpi=300)
         plt.gcf().subplots_adjust(bottom=0.25)
-        fig.clf()
+    plt.close()
 
 
 def plot_corner_freq(result, L2all, bestresult, phase, event, show):
