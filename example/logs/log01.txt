@@ -110,6 +110,19 @@ Reading in waveformsWindowing waveforms
 Calculating high_qualty signal spectra for fc inversion
 Reading in waveformsWindowing waveforms
 Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsCould not read in velocity waveform file: .//event_waveforms/e20170212.201626/e20170212.201626.WI.MPOM.*Z.msd
+Reading in waveformsCould not read in velocity waveform file: .//event_waveforms/e20170212.201626/e20170212.201626.WI.MPOM.*T.msd
+Reading in waveformsCould not read in velocity waveform file: .//event_waveforms/e20170212.201626/e20170212.201626.WI.MAGL.*Z.msd
+Reading in waveformsCould not read in velocity waveform file: .//event_waveforms/e20170212.201626/e20170212.201626.WI.MAGL.*T.msd
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsWindowing waveforms
+Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsCould not read in velocity waveform file: .//event_waveforms/e20170212.201626/e20170212.201626.GL.LKG.*Z.msd
 Reading in waveformsWindowing waveforms
 Calculating high_qualty signal spectra for fc inversion
 Reading in waveformsWindowing waveforms
@@ -128,15 +141,8 @@ Reading in waveformsWindowing waveforms
 Calculating high_qualty signal spectra for fc inversion
 Reading in waveformsWindowing waveforms
 Calculating high_qualty signal spectra for fc inversion
-Reading in waveformsWindowing waveforms
-Calculating high_qualty signal spectra for fc inversion
-Reading in waveformsWindowing waveforms
-Calculating high_qualty signal spectra for fc inversion
-Reading in waveformsWindowing waveforms
-Calculating high_qualty signal spectra for fc inversion
-Reading in waveformsCould not read in velocity waveform file: .//.//e20170212.201626/e20170212.201626.WI.CBE.*T.msd
-Reading in waveformsWindowing waveforms
-Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsCould not read in velocity waveform file: .//event_waveforms/e20170212.201626/e20170212.201626.WI.DHS.*Z.msd
+Reading in waveformsCould not read in velocity waveform file: .//event_waveforms/e20170212.201626/e20170212.201626.WI.DHS.*T.msd
 Reading in waveformsWindowing waveforms
 Calculating high_qualty signal spectra for fc inversion
 Reading in waveformsWindowing waveforms
@@ -145,22 +151,8 @@ Reading in waveformsWindowing waveforms
 Calculating high_qualty signal spectra for fc inversion
 Reading in waveformsWindowing waveforms
 Calculating high_qualty signal spectra for fc inversion
-Reading in waveformsWindowing waveforms
-Calculating high_qualty signal spectra for fc inversion
-Reading in waveformsWindowing waveforms
-Calculating high_qualty signal spectra for fc inversion
-Reading in waveformsWindowing waveforms
-Calculating high_qualty signal spectra for fc inversion
-Reading in waveformsWindowing waveforms
-Calculating high_qualty signal spectra for fc inversion
-Reading in waveformsWindowing waveforms
-Calculating high_qualty signal spectra for fc inversion
-Reading in waveformsWindowing waveforms
-Calculating high_qualty signal spectra for fc inversion
-Reading in waveformsWindowing waveforms
-Calculating high_qualty signal spectra for fc inversion
-Reading in waveformsWindowing waveforms
-Calculating high_qualty signal spectra for fc inversion
+Reading in waveformsCould not read in velocity waveform file: .//event_waveforms/e20170212.201626/e20170212.201626.WI.DSD.*Z.msd
+Reading in waveformsCould not read in velocity waveform file: .//event_waveforms/e20170212.201626/e20170212.201626.WI.DSD.*T.msd
 Reading in waveformsWindowing waveforms
 Calculating high_qualty signal spectra for fc inversion
 Reading in waveformsWindowing waveforms
@@ -223,7 +215,7 @@ Reading in waveformsWindowing waveforms
 Calculating high_qualty signal spectra for fc inversion
 Mw_est = 3.61
 Calculating corner frequency for phase: P
-p-wave fc =  7.37
+p-wave fc =  7.47
 best mw = 3.15
 Calculating corner frequency for phase: S
 Not enough HQ S-arrivals for corner freq

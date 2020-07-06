@@ -92,7 +92,7 @@ Reading in waveformsWindowing waveforms
 Calculating high_qualty signal spectra for fc inversion
 Mw_est = 4.06
 Calculating corner frequency for phase: P
-p-wave fc =  6.20
+p-wave fc =  6.10
 best mw = 4.02
 Calculating corner frequency for phase: S
 Not enough HQ S-arrivals for corner freq

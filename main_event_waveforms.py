@@ -75,10 +75,10 @@ def main_event_waveforms(cfg, iter, cat):
 
         # Skip event if either no directory of waveforms, gap too large, or not
         # enough arrivals, or magnitude to small
-        if not os.path.exists("{:}/{:}/{:}".format(
-                cfg.dat.root_path, cfg.dat.waveform_dir, ev_id)):
-            print("{:}/{:}/{:}".format(
-                cfg.dat.root_path, cfg.dat.waveform_dir, ev_id))
+        if not os.path.exists("{:}/{:}".format(
+                cfg.dat.waveform_dir, ev_id)):
+            print("{:}/{:}".format(
+                cfg.dat.waveform_dir, ev_id))
             print("Skipping event - no waveform directory")
             continue
         sys.stdout.flush()
@@ -139,8 +139,8 @@ def main_event_waveforms(cfg, iter, cat):
                 continue
             location = _pick.waveform_id.location_code
             channel = _pick.waveform_id.channel_code
-            inv = read_inventory("{0:}/{1:}/{2:}.{3:}.xml".format(
-                cfg.dat.root_path, cfg.dat.metadata_dir, network, station))
+            inv = read_inventory("{}/{}.{}.xml".format(
+                cfg.dat.metadata_dir, network, station))
             inv = inv.select(station=station, location=location)
             if len(inv) == 0:
                 log.write(
@@ -193,8 +193,8 @@ def main_event_waveforms(cfg, iter, cat):
 
             # Read in velocity waveforms
             log.write("Reading in waveforms")
-            wave_file = ("{0:}/{1:}/{2:}/{2:}.{3:}.{4:}.*{5:}.msd".format(
-                cfg.dat.root_path, cfg.dat.waveform_dir, a_event.origin_id,
+            wave_file = ("{0:}/{1:}/{1:}.{2:}.{3:}.*{4:}.msd".format(
+                cfg.dat.waveform_dir, a_event.origin_id,
                 a_arrival.network, a_arrival.station, channel_read))
             try:
                 vel_instcorr = read(wave_file, format="MSEED")
