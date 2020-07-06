@@ -202,6 +202,16 @@ def main_event_waveforms(cfg, iter, cat):
                 log.write("Could not read in velocity waveform file: {:}\n"
                           .format(wave_file))
                 continue
+            # If multiple channels exist, then prioritise higher-rates
+            if len(vel_instcorr) > 1:
+                channels = [tr.stats.channel for tr in vel_instcorr]
+                if [i for i in channels if i.startswith("H")]:
+                    vel_instcorr = vel_instcorr.select("H*")
+                elif [i for i in channels if i.startswith("B")]:
+                    vel_instcorr = vel_instcorr.select("B*")
+                else:
+                    vel_instcorr = vel_instcorr.select("E*")
+
             dis_instcorr = vel_instcorr.copy().integrate()
 
             # Define window times
