@@ -36,7 +36,6 @@ def main_function():
     # Clear previous combined directory and working directories
     if os.path.isdir("output"):
         shutil.rmtree("output")
-        os.system("rm -r wd_*")
     os.makedirs("output")
     os.makedirs("output/figures")
     os.makedirs("output/events")
