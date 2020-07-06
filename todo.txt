@@ -1,0 +1,1 @@
+Some stations have EHZ and HHZ - make sure we prioritise H in ATTENpy

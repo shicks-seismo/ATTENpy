@@ -356,11 +356,11 @@ def plotsumm(event, arrival, snrcrt, icase, alpha_, show):
     if arrival.phase == "P":
         fc = event.fc_p
         Mw = event.Mw_p
-        lnmo = event.lnMo_p
     elif arrival.phase == "S":
         fc = event.fc_s
         Mw = event.Mw_s
-        lnmo = event.lnMo_s
+
+    lnmo = np.log(Mw_to_M0(Mw))
 
     fig = plt.figure(figsize=(9, 5.5))
     gs = GridSpec(2, 4)

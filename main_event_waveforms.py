@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-ATTENpy main script.
+ATTENpy main script.py
 
 Compute t* attenuation from amplitude spectra for P-waves, and optionally,
 S-waves. Inverts for a single seismic moment and corner frequency for each
@@ -192,27 +192,18 @@ def main_event_waveforms(cfg, iter, cat):
                 channel_read = "T"
 
             # Read in velocity waveforms
-            #log.write("Reading in waveforms")
-            #wave_file = ("{0:}/{1:}/{2:}/{2:}.{3:}.{4:}.*{5:}.msd".format(
-            #    cfg.dat.root_path, cfg.dat.waveform_dir, a_event.origin_id,
-            #    a_arrival.network, a_arrival.station, channel_read))
-            #try:
-            #    vel_instcorr = read(wave_file, format="MSEED")
-            #except Exception:
-            #    log.write("Could not read in velocity waveform file: {:}\n"
-            #              .format(wave_file))
-            #    continue
-
-            # Read in displacement waveforms
-            wave_file = ("{0:}/{1:}/{2:}/{2:}.{3:}.{4:}.*{5:}_DIS.msd".format(
+            log.write("Reading in waveforms")
+            wave_file = ("{0:}/{1:}/{2:}/{2:}.{3:}.{4:}.*{5:}.msd".format(
                 cfg.dat.root_path, cfg.dat.waveform_dir, a_event.origin_id,
                 a_arrival.network, a_arrival.station, channel_read))
             try:
-                dis_instcorr = read(wave_file, format="MSEED")
+                vel_instcorr = read(wave_file, format="MSEED")
             except Exception:
-                log.write("Could not read in disp. waveform file: {:}\n"
+                log.write("Could not read in velocity waveform file: {:}\n"
                           .format(wave_file))
-                dis_instcorr = []
+                continue
+            dis_instcorr = vel_instcorr.copy()
+            dis_instcorr.integrate()
 
             # Define window times
             if a_arrival.phase == "P":
@@ -244,8 +235,7 @@ def main_event_waveforms(cfg, iter, cat):
                 a_arrival.noise_win[0], a_arrival.noise_win[1])
                 .detrend(type='demean'))
             data = Adata(vel_corr=vel_instcorr, dis_corr=dis_instcorr,
-                         signal_vel_corr=signal_st,
-                         noise_vel_corr=noise_st)
+                         signal_vel_corr=signal_st, noise_vel_corr=noise_st)
             a_arrival.data.append(data)
 
             # Calcuate high_qualty signal spectra for fc and α inversion
@@ -284,7 +274,6 @@ def main_event_waveforms(cfg, iter, cat):
                     a_event.p_arrivals_LQ.append(LQ_arrival)
                 elif arrival.phase == "S":
                     a_event.s_arrivals_LQ.append(LQ_arrival)
-
         # Skip to next event if no arrivals (with found waveforms)
         if len(a_event.p_arrivals_HQ) < cfg.inv.min_arr_fc:
             log.write("Not enough HQ P arrivals - skipping\n")
@@ -415,7 +404,7 @@ def main_event_waveforms(cfg, iter, cat):
         log.write("Inverting t*(P) - case 3\n")
         print(len(a_event.p_arrivals_LQ_fitting))
         if (len(a_event.p_arrivals_LQ_fitting) > 4
-            and phase in cfg.inv.phases):
+                and phase in cfg.inv.phases):
             a_event, p_resall, p_misfitall, p_allt\
                     = PS_case(a_event, a_event.fc_p, phase, cfg.inv.α, icase,
                               cfg.inv.min_fit_p, p_resall, p_misfitall, p_allt)
