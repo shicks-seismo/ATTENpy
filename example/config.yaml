@@ -9,8 +9,8 @@ dat:
         min_mag: 2.2  # Minimum event magnitude
         mindepth: 0.0  # Minimum event depth in km
         maxdepth: 400.0  # Maximum event depth in km
-        evt_blacklist: ["e20160417.064427", "e20160831.223818", "e20161111.204639"]  # Event blacklist
-        sta_blacklist: ["TRNT"]  # Station blacklist
+        evt_exclude: ["e20160417.064427", "e20160831.223818", "e20161111.204639"]  # Events to exclude
+        sta_exclude: ["TRNT"]  # Stations to exclude
 inv:
         phases: ["P", "S"]  # Phase names to use
         prewin_p: 0.1  #  Number of seconds to window before P-wave arrival

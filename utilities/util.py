@@ -162,7 +162,7 @@ def filter_cat(cat, cfg):
     for evt in cat:
         orig = evt.preferred_origin()
         if (len(orig.arrivals) > 5
-                and evt.event_descriptions[0].text not in cfg.sta_blacklist):
+                and evt.event_descriptions[0].text not in cfg.sta_exclude):
             cat_final.append(evt)
     return cat_final
 

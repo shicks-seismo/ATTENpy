@@ -135,7 +135,7 @@ def main_event_waveforms(cfg, iter, cat):
             # Get trace information
             network = _pick.waveform_id.network_code
             station = _pick.waveform_id.station_code
-            if station in cfg.dat.sta_blacklist:
+            if station in cfg.dat.sta_exclude:
                 continue
             location = _pick.waveform_id.location_code
             channel = _pick.waveform_id.channel_code
