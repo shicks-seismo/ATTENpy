@@ -202,8 +202,7 @@ def main_event_waveforms(cfg, iter, cat):
                 log.write("Could not read in velocity waveform file: {:}\n"
                           .format(wave_file))
                 continue
-            dis_instcorr = vel_instcorr.copy()
-            dis_instcorr.integrate()
+            dis_instcorr = vel_instcorr.copy().integrate()
 
             # Define window times
             if a_arrival.phase == "P":
