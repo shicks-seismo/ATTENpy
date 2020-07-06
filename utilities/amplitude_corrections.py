@@ -90,9 +90,11 @@ def amplitude_correction(mod_name, Δ, z_src, phase):
     # Now do geometric spreading correction ################################
     # Get first arrival from TauP for incidence angle and ray param
     taup_model = obspy.taup.TauPyModel(model=mod_name)
-    arrival = taup_model.get_travel_times(source_depth_in_km=z_src,
+    arrivals = taup_model.get_travel_times(source_depth_in_km=z_src,
                                           distance_in_degree=Δ,
-                                          phase_list=phases)[0]
+                                          phase_list=phases)
+    if len(arrivals) == 0:
+        return 0.0
 
     # Estimate dih/dΔ (dihdel) - change of takeoff angle with distance
     if Δ - Δ_inc >= 0:
