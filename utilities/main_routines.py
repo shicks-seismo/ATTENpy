@@ -39,7 +39,7 @@ def PS_case(a_event, fc, phase, α, icase, min_fit, res_all, misfit_all, allt):
     constrainMoS = 0
     (data, model, residu, lnMo, tstar, g, Ginv, vardat,
      lnnnomenerr, estdataerr, tstarerr, L2P) = invert_tstar(
-         a_event, fc, phase, α, constrainMoS, icase=icase)
+             a_event, fc, phase, α, constrainMoS, icase=icase)
     # Add residual and misfit to totals for all events
     res_all = res_all + residu**2 / np.sum(data[:, 0]**2)
     misfit_all = misfit_all + residu / np.sum(data[:, 0])

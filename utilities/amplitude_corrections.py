@@ -95,6 +95,8 @@ def amplitude_correction(mod_name, Δ, z_src, phase):
                                           phase_list=phases)
     if len(arrivals) == 0:
         return 0.0
+    else:
+        arrival = arrivals[0]
 
     # Estimate dih/dΔ (dihdel) - change of takeoff angle with distance
     if Δ - Δ_inc >= 0:

@@ -13,6 +13,7 @@ from mtspec.multitaper import mtspec
 import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap
 import matplotlib
+import sys
 
 font = {'family': 'Arial',
         'weight': 'normal',
@@ -20,77 +21,14 @@ font = {'family': 'Arial',
 matplotlib.rc('font', **font)
 
 
-def read_data_sds(sds_path, origin, pick, channel, prewin_P, WL_P):
-    mseed_file_path = ('{0:}/{1:}/*/{2:}/{3:}.D/*.{2:}.*.{3}.D.{1:}.{4:03d}'
-                       .format(sds_path, pick.time.year,
-                               pick.waveform_id.station_code,
-                               channel, pick.time.julday))
-    try:
-        st = read(mseed_file_path, format="MSEED")
-    except:
-        st = []
-        return st
-
-    # Check that noise window doesn't pass into previous day
-    if (pick.time-prewin_P-WL_P).julday < pick.time.julday:
-        newday = pick.time - prewin_P - WL_P
-        mseed_file_path = (
-            '{0:}/{1:}/*/{2:}/{3:}.D/*.{2:}.*.{3}.D.{1:}.{4:03d}'
-            .format(sds_path, newday.year, pick.waveform_id.station_code,
-                    channel, newday.julday))
-        try:
-            st += read(mseed_file_path, format="MSEED")
-        except:
-            print("Cannot read {:}.{:}.{:}-{:}.{:}".format(
-                pick.waveform_id.network_code,
-                pick.waveform_id.station_code,
-                channel, newday.year, newday.julday))
-
-    # Check that signal window doesn't go into next day
-    elif (pick.time-prewin_P+WL_P).julday > pick.time.julday:
-        newday = pick.time - prewin_P + WL_P
-        mseed_file_path = (
-            '{0:}/{1:}/*/{2:}/{3:}.D/*.{2:}.*.{3}.D.{1:}.{4:03d}'
-            .format(sds_path, newday.year, pick.waveform_id.station_code,
-                    channel, newday.julday))
-        try:
-            st += read(mseed_file_path, format="MSEED")
-        except:
-            print("Cannot read {:}.{:}.{:}-{:}.{:}".format(
-                pick.waveform_id.network_code,
-                pick.waveform_id.station_code,
-                channel, newday.year, newday.julday))
-
-        st.merge(fill_value=0)
-    return st
-
-
-def get_station_locations(station_file):
-    """
-    Get station location information from space delimited file of network,
-    station code, lat, long, elevation.
-    """
-    f = open(station_file, 'r')
-    STATIONS = []
-    for line in f:
-        station = {}
-        station['network'] = line.split()[0]
-        station['station'] = line.split()[1]
-        station['lat'] = float(line.split()[2])
-        station['lon'] = float(line.split()[3])
-        station['elev'] = float(line.split()[4])
-        STATIONS.append(station)
-    f.close()
-    return STATIONS
-
-
-def calc_spec(P_signal, P_noise, snrcrt, linresid):
+def calc_spec(P_signal, P_noise, snrcrt, linresid, orig_id):
     """
     Calculate multi-taper spectrum
     """
     nft = 1024
     npi = 3.0
     smlen = 11
+    print(orig_id)
     spec_sig_vel, freq_sig = mtspec(data=P_signal[0].data,
                                     delta=P_signal[0].stats.delta,
                                     time_bandwidth=npi, nfft=nft,
@@ -99,6 +37,7 @@ def calc_spec(P_signal, P_noise, snrcrt, linresid):
                                         delta=P_noise[0].stats.delta,
                                         time_bandwidth=npi, nfft=nft,
                                         number_of_tapers=int(npi*2-1))
+    print(orig_id)
     spec_sig_vel = spec_sig_vel[1:]
     spec_noise_vel = spec_noise_vel[1:]
     freq_all = freq_sig[1:]
@@ -162,7 +101,8 @@ def filter_cat(cat, cfg):
     for evt in cat:
         orig = evt.preferred_origin()
         if (len(orig.arrivals) > 5
-                and evt.event_descriptions[0].text not in cfg.sta_exclude):
+                and evt.event_descriptions[0].text not in cfg.sta_exclude
+                and orig.depth > 2000):
             cat_final.append(evt)
     return cat_final
 
@@ -647,7 +587,6 @@ def buildd(a_event, fc, POS, icase, lnM=0):
             data = stad
         else:
             data = np.vstack((data, stad))
-
     return data
 
 
@@ -658,14 +597,8 @@ def invert_tstar(a_event, fc, phase, α, constr_MoS, icase):
     data = buildd(a_event, fc, phase, icase)
     G = buildG(a_event, α, phase, icase)
     Ginv = np.linalg.inv(np.dot(G[:, :].transpose(), G[:, :]))
-    try:
-        model, residu = nnls(G[:, :], data[:, 0])
-    except:
-        print(data[:, 0])
-    #if constr_MoS == 0:
+    model, residu = nnls(G[:, :], data[:, 0])
     lnmomen = model[0]
-    #else:
-    #    lnmomen = a_event.lnMo_p
     tstar = model[1:]
     L2P = residu / np.sum(data[:, 0])
     vardat = residu / np.sqrt(data[:, 0].shape[0] - 2)

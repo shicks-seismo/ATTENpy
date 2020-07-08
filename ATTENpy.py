@@ -21,14 +21,27 @@ def main_function():
     from obspy import read_events, Catalog
     import numpy as np
     import os
+    import sys
     import shutil
     import glob
     import yaml
     from util import filter_cat
-    import multiprocessing
+    import multiprocessing, logging
     import pandas as pd
     from functools import partial
     from objects import Atten_DB
+    import istarmap
+    import tqdm
+    from multiprocessing import pool
+    import numpy as np
+    import warnings
+
+    warnings.filterwarnings("ignore", category=UserWarning)
+
+#    np.seterr(all='raise')
+
+    mpl = multiprocessing.log_to_stderr()
+    mpl.setLevel(logging.INFO)
 
     with open("config.yaml") as f:  # Read in config
         cfg = obj(yaml.safe_load(f))
@@ -49,20 +62,33 @@ def main_function():
     if cfg.comp.nproc == -1:
         n_cores = multiprocessing.cpu_count()
     else:
-        n_cores = cfg.comp.nproc
+        n_cores = cfg.comp.nproci
     evts_all = [evt for evt in cat]
-    if len(evts_all) <= n_cores:
-        n_cores = len(evts_all)
+    if cfg.comp.debug:
+        n_cores = 1
+        evts_all = [evt for evt in cat if evt.event_descriptions[0].text == cfg.comp.debug_evt_id]
+    else:
+        if len(evts_all) <= n_cores:
+            n_cores = len(evts_all)
     evts_all = split(evts_all, n_cores)
     cat_segments = list(enumerate([Catalog(events=evts) for evts in evts_all]))
 
-    with multiprocessing.Pool(processes=n_cores) as pool:  # Run in parallel
-        atten_db = pool.starmap(partial(main_event_waveforms, cfg),
+    if not cfg.comp.debug:
+      #  with multiprocessing.Pool(processes=n_cores) as pool:  # Run in parallel
+      pool = multiprocessing.Pool(processes=n_cores)
+      atten_db = pool.starmap(partial(main_event_waveforms, cfg),
                                 cat_segments)
-    atten_db_all = Atten_DB()  # Merge event databases
-    for x in atten_db:
-        for y in x:
-            atten_db_all.Aevents.append(y)
+#      except Exception as e:
+#          exc_type, exc_obj, exc_tb = sys.exc_info()
+#          fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+#          print(exc_type, fname, exc_tb.tb_lineno)
+#          pool.close()
+      atten_db_all = Atten_DB()  # Merge event databases
+      for x in atten_db:
+          for y in x:
+              atten_db_all.Aevents.append(y)
+    else:
+        atten_db_all = main_event_waveforms(cfg, 0, cat_segments[0][1])
 
     pd.DataFrame.from_records(
         [evt.to_dict() for evt in atten_db_all.Aevents]

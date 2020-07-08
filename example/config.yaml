@@ -1,16 +1,15 @@
 dat:
         #        cat_file: "VOILA_all_1D_cleaned_amplitudes_magnitudes.xml"  # QUAKEML event catalogue
-        cat_file: "test.xml"
-        root_path: "./"  # Root path to waveform and metadata directories
-        # waveform_dir: "local_events"  # Directory containing event waveform directories
-        waveform_dir: "event_waveforms"  # Directory containing event waveform directories
-        metadata_dir: "stations"  # Directory containing station metadata
+        cat_file: "../VOILA_all_1D_cleaned_amplitudes_magnitudes.xml"
+        #cat_file: 'test.xml'
+        waveform_dir: "/DATA/VOILA/local_events/"  # Directory containing event waveform directories
+        metadata_dir: "../stations"  # Directory containing station metadata
         max_gap: 250.0  # Maximum azimuthal gap
         min_mag: 2.2  # Minimum event magnitude
         mindepth: 0.0  # Minimum event depth in km
         maxdepth: 400.0  # Maximum event depth in km
-        evt_exclude: ["e20160417.064427", "e20160831.223818", "e20161111.204639"]  # Events to exclude
-        sta_exclude: ["TRNT"]  # Stations to exclude
+        evt_exclude: ["e20160417.064427", "e20160831.223818", "e20161111.204639"]  # Event blacklist
+        sta_exclude: ["TRNT"]  # Station blacklist
 inv:
         phases: ["P", "S"]  # Phase names to use
         prewin_p: 0.1  #  Number of seconds to window before P-wave arrival
@@ -34,6 +33,8 @@ earth_mod:
         mod_name: "lesserantilles_lb_noupperslow_190618"
 comp:
         nproc: -1  # Number of cores to use (-1 = choose automatically)
+        debug: True
+        debug_evt_id: "e20160508.134804"
 plt:
         l2p_fck: False
         fc_tstar: False

@@ -25,6 +25,7 @@ from obspy import read_inventory, read
 from obspy.geodetics.base import gps2dist_azimuth
 from amplitude_corrections import amplitude_correction
 import numpy as np
+from tqdm import tqdm
 
 
 def main_event_waveforms(cfg, iter, cat):
@@ -65,21 +66,21 @@ def main_event_waveforms(cfg, iter, cat):
     # Create log file
     log = open("logs/log{:}.txt".format(wdir), "w")
 
-    for n_evt, event in enumerate(cat):
+    for n_evt, event in enumerate(tqdm(cat, position=iter, desc="Proc.: {:2g}".format(iter), leave=False)):
         arrivals_used = []
         origin = event.preferred_origin()
         ev_id = event.event_descriptions[0].text
         log.write("Working on event: {:}\n".format(ev_id))
         log.flush()
-        print("P{:} - Event {:}/{:}".format(iter, n_evt+1, len(cat)))
+        # print("P{:} - Event {:}/{:}".format(iter, n_evt+1, len(cat)))
 
         # Skip event if either no directory of waveforms, gap too large, or not
         # enough arrivals, or magnitude to small
         if not os.path.exists("{:}/{:}".format(
                 cfg.dat.waveform_dir, ev_id)):
-            print("{:}/{:}".format(
-                cfg.dat.waveform_dir, ev_id))
-            print("Skipping event - no waveform directory")
+            #print("{:}/{:}".format(
+            #    cfg.dat.waveform_dir, ev_id))
+            # print("Skipping event - no waveform directory")
             continue
         sys.stdout.flush()
 
@@ -90,6 +91,8 @@ def main_event_waveforms(cfg, iter, cat):
         log.write("{:} = {:3.2f}\n".format(
             a_event.magnitude_type, a_event.mag))
         depth_km = origin.depth / 1000
+        if os.path.exists("output/figures/{:}".format(ev_id)):
+            continue   # Skiup event if duplicate
         os.makedirs("output/figures/{:}".format(ev_id))
 
         # Set depth to zero if above surface
@@ -245,7 +248,12 @@ def main_event_waveforms(cfg, iter, cat):
                 .detrend(type='demean'))
             data = Adata(vel_corr=vel_instcorr, dis_corr=dis_instcorr,
                          signal_vel_corr=signal_st, noise_vel_corr=noise_st)
+            if (len(signal_st) == 0 or len(noise_st) == 0
+                    or np.max(np.abs(signal_st[0].data)) == 0.0
+                    or np.max(np.abs(noise_st[0].data)) == 0.0):
+                continue
             a_arrival.data.append(data)
+            
 
             # Calcuate high_qualty signal spectra for fc and α inversion
             log.write("Calculating high_qualty signal spectra for fc "
@@ -257,7 +265,9 @@ def main_event_waveforms(cfg, iter, cat):
              aspectrum.noise_dis, aspectrum.SNR, aspectrum.freq_good,
              aspectrum.sig_good_dis, aspectrum.fr_good, good_bool) =\
                 calc_spec(data.signal_vel_corr, data.noise_vel_corr,
-                          snrcrt1, cfg.inv.lincor)
+                          snrcrt1, cfg.inv.lincor, a_event.origin_id)
+            if len(aspectrum.freq_sig) != len(aspectrum.sig_full_dis):
+                good_bool = False
             if good_bool is True:
                 HQ_arrival = a_arrival
                 HQ_arrival.aspectrum = aspectrum
@@ -275,7 +285,7 @@ def main_event_waveforms(cfg, iter, cat):
              aspectrum.noise_dis, aspectrum.SNR, aspectrum.freq_good,
              aspectrum.sig_good_dis, aspectrum.fr_good, good_bool) =\
                 calc_spec(data.signal_vel_corr, data.noise_vel_corr,
-                          snrcrt2, cfg.inv.lincor)
+                          snrcrt2, cfg.inv.lincor, a_event.origin_id)
             if good_bool is True:
                 LQ_arrival = a_arrival
                 LQ_arrival.aspectrum = aspectrum
@@ -411,7 +421,6 @@ def main_event_waveforms(cfg, iter, cat):
         phase = "P"
         icase = 3
         log.write("Inverting t*(P) - case 3\n")
-        print(len(a_event.p_arrivals_LQ_fitting))
         if (len(a_event.p_arrivals_LQ_fitting) > 4
                 and phase in cfg.inv.phases):
             a_event, p_resall, p_misfitall, p_allt\
