@@ -28,16 +28,17 @@ def calc_spec(P_signal, P_noise, snrcrt, linresid, orig_id):
     nft = 1024
     npi = 3.0
     smlen = 11
-    print(orig_id)
+    # Low pass filter to ensure we don't get mtspec adaptspec converge errors
+    P_noise.filter("bandpass", freqmin=0.05, freqmax=0.94 * P_noise[0].stats.sampling_rate / 2)
+    P_signal.filter("bandpass", freqmin=0.05, freqmax=0.94 * P_noise[0].stats.sampling_rate / 2)
     spec_sig_vel, freq_sig = mtspec(data=P_signal[0].data,
                                     delta=P_signal[0].stats.delta,
                                     time_bandwidth=npi, nfft=nft,
-                                    number_of_tapers=int(npi*2-1))
+                                    number_of_tapers=int(npi*2-1), verbose="True")
     spec_noise_vel, freq_noise = mtspec(data=P_noise[0].data,
                                         delta=P_noise[0].stats.delta,
                                         time_bandwidth=npi, nfft=nft,
                                         number_of_tapers=int(npi*2-1))
-    print(orig_id)
     spec_sig_vel = spec_sig_vel[1:]
     spec_noise_vel = spec_noise_vel[1:]
     freq_all = freq_sig[1:]
@@ -49,7 +50,7 @@ def calc_spec(P_signal, P_noise, snrcrt, linresid, orig_id):
         SNR_smooth = smooth(SNR, smlen)
 
     # Set maximum frequency of spectrum  0.9 is the Nyquist fraction
-    f_max = 0.90 * P_signal[0].stats.sampling_rate / 2
+    f_max = 0.94 * P_signal[0].stats.sampling_rate / 2
 
     (begind, endind, frminp, frmaxp, frangep) = longest_segment(
         SNR_smooth, snrcrt, freq_sig, f_max)
@@ -670,7 +671,6 @@ def smooth(x,window_len,window='hanning'):
     if window_len % 2 ==0:
         window_len = window_len + 1
     s=np.r_[x[window_len-1:0:-1],x,x[-1:-window_len:-1]]
-    #print(len(s))
     if window == 'flat': #moving average
         w=np.ones(window_len,'d')
     else:

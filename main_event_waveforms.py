@@ -66,13 +66,12 @@ def main_event_waveforms(cfg, iter, cat):
     # Create log file
     log = open("logs/log{:}.txt".format(wdir), "w")
 
-    for n_evt, event in enumerate(tqdm(cat, position=iter, desc="Proc.: {:2g}".format(iter), leave=False)):
+    for n_evt, event in enumerate(tqdm(cat, total=len(cat), position=iter, desc="Proc.: {:2g}".format(iter), leave=True)):
         arrivals_used = []
         origin = event.preferred_origin()
         ev_id = event.event_descriptions[0].text
         log.write("Working on event: {:}\n".format(ev_id))
         log.flush()
-        # print("P{:} - Event {:}/{:}".format(iter, n_evt+1, len(cat)))
 
         # Skip event if either no directory of waveforms, gap too large, or not
         # enough arrivals, or magnitude to small
@@ -259,7 +258,6 @@ def main_event_waveforms(cfg, iter, cat):
             log.write("Calculating high_qualty signal spectra for fc "
                       "inversion\n")
             icase = 1
-
             aspectrum = Aspectrum()
             (aspectrum.freq_sig, aspectrum.sig_full_dis,
              aspectrum.noise_dis, aspectrum.SNR, aspectrum.freq_good,

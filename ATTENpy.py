@@ -40,9 +40,6 @@ def main_function():
 
 #    np.seterr(all='raise')
 
-    mpl = multiprocessing.log_to_stderr()
-    mpl.setLevel(logging.INFO)
-
     with open("config.yaml") as f:  # Read in config
         cfg = obj(yaml.safe_load(f))
 
@@ -55,6 +52,7 @@ def main_function():
     os.makedirs("output/events/P"); os.makedirs("output/events/S")
 
     # Read in and filter catalogue
+    print("Reading in event catalogue")
     cat = read_events(cfg.dat.cat_file, format="QUAKEML")
     cat = filter_cat(cat, cfg.dat)
 
@@ -72,7 +70,7 @@ def main_function():
             n_cores = len(evts_all)
     evts_all = split(evts_all, n_cores)
     cat_segments = list(enumerate([Catalog(events=evts) for evts in evts_all]))
-
+    os.system('cls' if os.name == 'nt' else 'clear')
     if not cfg.comp.debug:
       #  with multiprocessing.Pool(processes=n_cores) as pool:  # Run in parallel
       pool = multiprocessing.Pool(processes=n_cores)
