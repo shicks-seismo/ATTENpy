@@ -11,9 +11,9 @@ import numpy as np
 from util import fitting, invert_tstar
 
 
-def PS_case(a_event, fc, phase, α, icase, min_fit, res_all, misfit_all, allt):
+def PS_case(a_event, fc, phase, α, icase, min_fit):
     """
-    
+
 
     Parameters
     ----------
@@ -41,9 +41,14 @@ def PS_case(a_event, fc, phase, α, icase, min_fit, res_all, misfit_all, allt):
      lnnnomenerr, estdataerr, tstarerr, L2P) = invert_tstar(
              a_event, fc, phase, α, constrainMoS, icase=icase)
     # Add residual and misfit to totals for all events
-    res_all = res_all + residu**2 / np.sum(data[:, 0]**2)
-    misfit_all = misfit_all + residu / np.sum(data[:, 0])
-    allt = allt + 1
+    if phase == "P":
+        a_event.res_p = residu**2 / np.sum(data[:, 0]**2)
+    elif phase == "S":
+        a_event.res_s = residu**2 / np.sum(data[:, 0]**2)
+    if phase == "P":
+        a_event.misfit_p = residu / np.sum(data)
+    elif phase == "S":
+        a_event.misfit_s = residu / np.sum(data)
 
     if phase == "P" and icase == 2:
         arrivals = a_event.p_arrivals_LQ
@@ -63,9 +68,10 @@ def PS_case(a_event, fc, phase, α, icase, min_fit, res_all, misfit_all, allt):
         est = estdataerr[0: ndat+1]
         var = np.linalg.norm(dat-est)**2 / (ndat-2)
         arr.misfit = np.sqrt(var*(ndat-2)) / ndat
-        arr.err = np.sqrt(var*Ginv.diagonal()[nnn+1])
+        arr.err = tstarerr[nnn]
         arr.fit = fitting(arr, lnMo, fc, α)
         arr.tstar_pathave = (arr.tstar / (arr.time - a_event.origins[0].time))
+        arr.tstar_pathave_err = (arr.err / (arr.time - a_event.origins[0].time))
         if icase == 2:
             if arr.fit >= min_fit:
                 if phase == "P":
@@ -81,4 +87,4 @@ def PS_case(a_event, fc, phase, α, icase, min_fit, res_all, misfit_all, allt):
         a_event.Mw_p = 2/3 * np.log10(np.exp(lnMo)*1e7) - 10.73  # Mw
     elif phase == "S":
         a_event.Mw_s = 2/3 * np.log10(np.exp(lnMo)*1e7) - 10.73  # Mw
-    return a_event, res_all, misfit_all, allt
+    return a_event

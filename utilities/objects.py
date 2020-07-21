@@ -28,7 +28,8 @@ class AEvent:
                  s_arrivals_HQ=[], s_arrivals_LQ=[],
                  p_arrivals_LQ_fitting=[], s_arrivals_LQ_fitting=[],
                  Mw_p=None, lnMo_p=None, fc_p=None, fc_s=None, alpha_p=None,
-                 Mw_s=None, lnMo_s=None, alpha_s=None):
+                 Mw_s=None, lnMo_s=None, alpha_s=None, misfit_p=None,
+                 misfit_s=None, res_p=None, res_s=None):
         self.origin_id = origin_id or []
         self.mag = mag or []
         self.magnitude_type = magnitude_type or []
@@ -45,6 +46,10 @@ class AEvent:
         self.alpha_p = alpha_p or 99999.0
         self.Mw_s = Mw_s or 99999.0
         self.alpha_s = alpha_s or 99999.0
+        self.misfit_p = misfit_p
+        self.misfit_s = misfit_s
+        self.res_p = res_p
+        self.res_s = res_s
 
     def to_dict(self):
         """Convert to dictionary - e.g. for making Pandas DataFrame."""
@@ -53,12 +58,12 @@ class AEvent:
             'lat': self.origins[0].latitude, 'lon': self.origins[0].longitude,
             'dep': self.origins[0].depth_km,
             'ML': self.mag, 'Mw_p': self.Mw_p, 'Mw_s': self.Mw_s,
-            'fc_p': self.fc_p, 'fc_s': self.fc_s, 
+            'fc_p': self.fc_p, 'fc_s': self.fc_s,
             'no_p_hq': len(self.p_arrivals_HQ),
             'no_s_hq': len(self.s_arrivals_HQ),
             'no_p_lq': len(self.p_arrivals_LQ),
             'no_s_lq': len(self.s_arrivals_LQ),
-            'no_p_lq_fit': len(self.p_arrivals_LQ_fitting), 
+            'no_p_lq_fit': len(self.p_arrivals_LQ_fitting),
             'no_s_lq_fit': len(self.s_arrivals_LQ_fitting)
             }
 
@@ -81,8 +86,8 @@ class Aarrival:
     def __init__(self, network, station, channel, station_lat, station_lon,
                  station_ele, back_azimuth, time, phase, correction, data=None,
                  aspectrum=None, sig_win=None, noise_win=None, tstar=None,
-                 tstar_pathave=None, misfit=None, err=None, fitting=None,
-                 fit=None):
+                 tstar_pathave=None, tstar_pathave_err=None,
+                 misfit=None, err=None, fitting=None, fit=None):
         self.network = network or []
         self.station = station or []
         self.channel = channel or []
@@ -99,10 +104,18 @@ class Aarrival:
         self.noise_win = noise_win or []
         self.tstar = tstar or 99999.0
         self.tstar_pathave = tstar_pathave or 99999.0
+        self.tstar_pathave_err = tstar_pathave_err or 99999.0
         self.misfit = misfit or 99999.0
         self.fit = fit or 99999.0
         self.err = err or 99999.0
         self.fitting = fitting or 99999.0
+
+    def to_dict(self):
+        """Convert to dictionary - e.g. for making Pandas DataFrame."""
+        return {
+            'station': self.station, 'tstar': self.tstar, 'fit': self.fit,
+            't*pathave': self.tstar_pathave
+            }
 
 
 class Adata:

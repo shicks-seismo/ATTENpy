@@ -300,7 +300,7 @@ def main_event_waveforms(cfg, iter, cat):
         # Make list containing range of corner frequencies to account for
         # uncertainities in M and beta (Pozgay et al., 2009)
         # Mw_est = Mw_scaling(Mw_scale_type, a_event.mag_mb)
-        Mw_est = a_event.mag
+        Mw_est = a_event.mag * 1.048 - 0.418  # Lidner vs Bie relationship
         log.write("Mw_est = {:3.2f}\n".format(Mw_est))
         Mo_Nm = Mw_to_M0(Mw_est)
         fc_range = get_fc_range(cfg.inv.Δσ_r, Mo_Nm, a_origin.beta_src)
@@ -404,8 +404,8 @@ def main_event_waveforms(cfg, iter, cat):
         icase = 2
         log.write("Inverting t*(P) - case 2\n")
         if len(a_event.p_arrivals_LQ) > 0 and phase in cfg.inv.phases:
-            a_event, _, _, _ = PS_case(a_event, a_event.fc_p, phase, cfg.inv.α,
-                                       icase, cfg.inv.min_fit_p, _, _, _)
+            a_event = PS_case(a_event, a_event.fc_p, phase, cfg.inv.α,
+                              icase, cfg.inv.min_fit_p)
         else:
             log.write("Not enough LQ P-arrivals - skipping event\n")
             continue
@@ -421,9 +421,8 @@ def main_event_waveforms(cfg, iter, cat):
         log.write("Inverting t*(P) - case 3\n")
         if (len(a_event.p_arrivals_LQ_fitting) > 4
                 and phase in cfg.inv.phases):
-            a_event, p_resall, p_misfitall, p_allt\
-                    = PS_case(a_event, a_event.fc_p, phase, cfg.inv.α, icase,
-                              cfg.inv.min_fit_p, p_resall, p_misfitall, p_allt)
+            a_event = PS_case(a_event, a_event.fc_p, phase, cfg.inv.α, icase,
+                              cfg.inv.min_fit_p)
             if cfg.plt.summ_case3:
                 for arrival in a_event.p_arrivals_LQ_fitting:
                     plotsumm(a_event, arrival, cfg.inv.snrcrtp2, icase,
@@ -439,9 +438,8 @@ def main_event_waveforms(cfg, iter, cat):
             icase = 2
             log.write("Inverting t*(S) - case 2\n")
             if len(a_event.s_arrivals_LQ) > 3 and phase in cfg.inv.phases:
-                a_event, _, _, _ = PS_case(
-                    a_event, a_event.fc_s, phase, cfg.inv.α, icase,
-                    cfg.inv.min_fit_s, _, _, _)
+                a_event = PS_case(a_event, a_event.fc_s, phase, cfg.inv.α,
+                                  icase, cfg.inv.min_fit_s)
                 if cfg.plt.summ_case2:
                     for arrival in a_event.s_arrivals_LQ:
                         plotsumm(a_event, arrival, cfg.tstar.snrcrts2,
@@ -457,10 +455,8 @@ def main_event_waveforms(cfg, iter, cat):
             log.write("Inverting t*(S) - case 3\n")
             if (len(a_event.s_arrivals_LQ_fitting) > 4 and phase in
                     cfg.inv.phases):
-                a_event, s_resall, s_misfitall, s_allt\
-                    = PS_case(a_event, a_event.fc_s, phase, cfg.inv.α, icase,
-                              cfg.inv.min_fit_s, s_resall, s_misfitall,
-                              s_allt)
+                a_event = PS_case(a_event, a_event.fc_s, phase, cfg.inv.α,
+                                  icase, cfg.inv.min_fit_s)
                 if cfg.plt.summ_case3:
                     for arrival in a_event.s_arrivals_LQ_fitting:
                         plotsumm(a_event, arrival, cfg.inv.snrcrts2, icase,
