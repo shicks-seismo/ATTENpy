@@ -109,7 +109,8 @@ def main_function():
     print("Average t*_s = {:.3f}".format(np.mean(
         [arr.tstar for evt in atten_db_all.Aevents
          for arr in evt.s_arrivals_LQ_fitting])))
-    print(tot_p_misfit, tot_s_misfit, tot_p_res, tot_s_res)
+    print("Total P-wave misfit: {:.4f}*1000 Total S-wave misfit: "
+          "{:.4f}*1000".format(tot_p_misfit, tot_s_misfit))
 
 
     forearc_poly = Polygon([
