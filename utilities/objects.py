@@ -7,6 +7,8 @@ Classes for passing objects between functions.
 @date: July 2020.
 """
 
+import numpy as np
+
 
 class Atten_DB:
     """Parent database containing events."""
@@ -84,10 +86,10 @@ class Aarrival:
     """Phase arrival structure."""
 
     def __init__(self, network, station, channel, station_lat, station_lon,
-                 station_ele, back_azimuth, time, phase, correction, data=None,
+                 station_ele, back_azimuth, time, phase, correction, stacorrf, stacorr, data=None,
                  aspectrum=None, sig_win=None, noise_win=None, tstar=None,
                  tstar_pathave=None, tstar_pathave_err=None,
-                 misfit=None, err=None, fitting=None, fit=None):
+                 misfit=None, err=None, fitting=None, fit=None, resid=None, residual_nm=None):
         self.network = network or []
         self.station = station or []
         self.channel = channel or []
@@ -98,6 +100,8 @@ class Aarrival:
         self.time = time or []
         self.phase = phase or []
         self.correction = correction or []
+        self.stacorr = stacorr
+        self.stacorrf = stacorrf
         self.data = data or []
         self.aspectrum = aspectrum or []
         self.sig_win = sig_win or []
@@ -109,6 +113,7 @@ class Aarrival:
         self.fit = fit or 99999.0
         self.err = err or 99999.0
         self.fitting = fitting or 99999.0
+        self.residual_nm = residual_nm or []
 
     def to_dict(self):
         """Convert to dictionary - e.g. for making Pandas DataFrame."""

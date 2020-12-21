@@ -21,7 +21,7 @@ def main_function():
     from obspy import read_events, Catalog
     import os
     import yaml
-    from util import filter_cat, make_dirs
+    from util import filter_cat, make_dirs, compute_station_corrections
     import multiprocessing
     import pandas as pd
     from functools import partial
@@ -30,10 +30,15 @@ def main_function():
     import numpy as np
     from shapely.geometry.polygon import Polygon
     from shapely.geometry import Point
+    import sys
+    import shutil
+    import pickle
 
     warnings.filterwarnings("ignore", category=UserWarning)
+    cfg_file = sys.argv[1]
+    run_name = sys.argv[2] 
 
-    with open("config.yaml") as f:  # Read in config
+    with open(cfg_file) as f:  # Read in config
         cfg = obj(yaml.safe_load(f))
 
     make_dirs()  # Clear previous combined directory and working directories
@@ -47,7 +52,7 @@ def main_function():
     if cfg.comp.nproc == -1:
         n_cores = multiprocessing.cpu_count()
     else:
-        n_cores = cfg.comp.nproci
+        n_cores = cfg.comp.nproc
     evts_all = [evt for evt in cat]
     if cfg.comp.debug:
         n_cores = 1
@@ -59,7 +64,8 @@ def main_function():
     evts_all = split(evts_all, n_cores)
     cat_segments = list(enumerate([Catalog(events=evts) for evts in evts_all]))
     if not cfg.comp.debug:
-        os.system('cls' if os.name == 'nt' else 'clear')
+#        os.system('cls' if os.name == 'nt' else 'clear')
+        print("No. events starting = ", len(cat))
         pool = multiprocessing.Pool(processes=n_cores)
         atten_db = pool.starmap(partial(main_event_waveforms, cfg),
                                 cat_segments)
@@ -67,7 +73,7 @@ def main_function():
         for x in atten_db:
             for y in x:
                 atten_db_all.Aevents.append(y)
-        os.system('cls' if os.name == 'nt' else 'clear')
+#        os.system('cls' if os.name == 'nt' else 'clear')
 
     else:
         atten_db_all = main_event_waveforms(cfg, 0, cat_segments[0][1])
@@ -101,6 +107,25 @@ def main_function():
                            if len(evt.p_arrivals_LQ_fitting) > 3]) / n_evts_P_fitting
     tot_s_res = np.sum([evt.res_s for evt in atten_db_all.Aevents
                            if len(evt.s_arrivals_LQ_fitting) > 4]) / n_evts_S_fitting
+    # Get residuals
+    p_resid_dic = {}
+    s_resid_dic = {}
+    for evt in atten_db_all.Aevents:
+        for arr in evt.p_arrivals_LQ_fitting:
+            if not arr.station in p_resid_dic:
+                p_resid_dic[arr.station] = {}
+            p_resid_dic[arr.station][evt.origin_id] = arr.residual_nm
+        for arr in evt.s_arrivals_LQ_fitting:
+            if not arr.station in s_resid_dic:
+                s_resid_dic[arr.station] = {}
+            s_resid_dic[arr.station][evt.origin_id] = arr.residual_nm
+    with open("output/residuals.pkl", "wb") as f:
+        pickle.dump([p_resid_dic, s_resid_dic], f)
+
+    compute_station_corrections("output", cfg.inv.phases)
+
+    print("Number of events with >1 P-fitting = {:}".format(n_evts_P_fitting))
+    print("Number of events with >S P-fitting = {:}".format(n_evts_S_fitting))
     print("Number of P obs = {}".format(n_P_fitting))
     print("Number of S obs = {}".format(n_S_fitting))
     print("Average t*_p = {:.3f}".format(np.mean(
@@ -110,7 +135,12 @@ def main_function():
         [arr.tstar for evt in atten_db_all.Aevents
          for arr in evt.s_arrivals_LQ_fitting])))
     print("Total P-wave misfit: {:.4f}*1000 Total S-wave misfit: "
-          "{:.4f}*1000".format(tot_p_misfit, tot_s_misfit))
+          "{:.4f}*1000".format(tot_p_misfit*1000, tot_s_misfit*1000))
+
+    shutil.rmtree("output_{:}".format(run_name), ignore_errors=True)
+    os.makedirs("output_{:}".format(run_name))
+    os.rename("output", "output_{:}".format(run_name))
+    shutil.copy(cfg_file, "output_{:}/{:}".format(run_name, cfg_file))
 
 
     forearc_poly = Polygon([
@@ -163,46 +193,6 @@ def main_function():
         if arc_poly.contains(Point(arr.station_lon, arr.station_lat))])
     print("t* arc mean P: {:.3f} S: {:.3f}".format(
         tstar_P_mean_arc, tstar_S_mean_arc))
-
-
-#     p_res_all, p_misfitall, p_allt = list(*zip[
-#         [float(l.split()[1]), float(l.split()[2]), float(l.split()[3])]
-#         for n, l in enumerate(open("wd_{:}/{:}".format(n_proc, output_cfg.fits_p_out), "r"))
-#         for n_proc in range(n_cores)])
-
-
-# w = open("output_combined/{:}".format(FITS_P_OUT), "w")
-# w.write("Alpha Normalised_residual Normalised_misfit N\n")
-# w.write("{:} {:} {:} {:}\n".format(ALPHA, np.sum(p_resall)/np.sum(p_allt),
-#                                     np.sum(p_misfitall)/np.sum(p_allt),
-#                                     np.sum(p_allt)))
-# w.close()
-
-# if "S" in PHASES:
-#     os.makedirs("output_combined/events/S")
-#     os.system("mv wd_*/events/S/*.tstar output_combined/events/S")
-#     os.system("cat wd_*/arrivals_s_atten.out > "
-#               "output_combined/arrivals_s_atten.out")
-#     w = open("output_combined/{:}".format(FITS_S_OUT), "w")
-#     w.write("{:} {:} {:} {:}\n".format(ALPHA, np.sum(s_resall)/np.sum(s_allt),
-#                                         np.sum(s_misfitall)/np.sum(s_allt),
-#                                         np.sum(s_allt)))
-#     w.close()
-
-
-# # Compute path-averaged Q
-# w = open("output_combined/average_Q.txt", "w")
-# path_ave_QP = []
-# tstar_files = glob.glob("output_combined/events/P/*.tstar")
-# for file in tstar_files:
-#     for n, l in enumerate(open(file)):
-#         if n > 0 and float(l.split()[2]) > 0.001:
-#             path_ave_QP.append(float(l.split()[1])/float(l.split()[2]))
-# path_ave_QP_mean = np.mean(path_ave_QP)
-# path_ave_QP_stdev = np.std(path_ave_QP)
-# w.write("Phase MeanQ StDevQ\n")
-# w.write("P {:} {:}\n".format(path_ave_QP_mean, path_ave_QP_stdev))
-
 
 
 def split(a, n):

@@ -11,7 +11,7 @@ import numpy as np
 from util import fitting, invert_tstar
 
 
-def PS_case(a_event, fc, phase, α, icase, min_fit):
+def PS_case(a_event, fc, phase, α, icase, min_fit, constrainMoS):
     """
 
 
@@ -36,7 +36,6 @@ def PS_case(a_event, fc, phase, α, icase, min_fit):
         Event object.
 
     """
-    constrainMoS = 0
     (data, model, residu, lnMo, tstar, g, Ginv, vardat,
      lnnnomenerr, estdataerr, tstarerr, L2P) = invert_tstar(
              a_event, fc, phase, α, constrainMoS, icase=icase)
@@ -69,7 +68,7 @@ def PS_case(a_event, fc, phase, α, icase, min_fit):
         var = np.linalg.norm(dat-est)**2 / (ndat-2)
         arr.misfit = np.sqrt(var*(ndat-2)) / ndat
         arr.err = tstarerr[nnn]
-        arr.fit = fitting(arr, lnMo, fc, α)
+        arr.fit, arr.residual_nm = fitting(arr, lnMo, fc, α)
         arr.tstar_pathave = (arr.tstar / (arr.time - a_event.origins[0].time))
         arr.tstar_pathave_err = (arr.err / (arr.time - a_event.origins[0].time))
         if icase == 2:

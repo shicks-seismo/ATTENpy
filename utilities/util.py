@@ -9,12 +9,22 @@ from scipy.stats import pearsonr
 import obspy
 from mtspec.multitaper import mtspec
 import matplotlib.pyplot as plt
-from mpl_toolkits.basemap import Basemap
+from obspy.signal.util import _npts2nfft
+import cartopy.crs as ccrs
+from cartopy.io.shapereader import Reader
+from cartopy.feature import ShapelyFeature
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+from shapely.geometry import MultiLineString
+from netCDF4 import Dataset as netcdf_dataset
+import ScientificColourMaps6 as SCM6
 import matplotlib
+from obspy.imaging.spectrogram import _nearest_pow_2
+import pickle
+import pandas as pd
 
-font = {'family': 'Arial',
+font = {'family': 'Latin Modern Sans',
         'weight': 'normal',
-        'size':    6}
+        'size':    7}
 matplotlib.rc('font', **font)
 matplotlib.rcParams['lines.linewidth'] = 0.7
 
@@ -41,14 +51,16 @@ def calc_spec(P_signal, P_noise, snrcrt, linresid, orig_id):
     None.
 
     """
-    nft = 1024
+    #nft = 1024
     npi = 3.0
     smlen = 11
     # Low pass filter to ensure we don't get mtspec adaptspec converge errors
-    P_noise.filter("bandpass", freqmin=0.05,
-                   freqmax=0.94 * P_noise[0].stats.sampling_rate / 2)
-    P_signal.filter("bandpass", freqmin=0.05,
-                    freqmax=0.94 * P_noise[0].stats.sampling_rate / 2)
+#    P_noise.filter("bandpass", freqmin=0.05,
+#                   freqmax=0.94 * P_noise[0].stats.sampling_rate / 2)
+#    P_signal.filter("bandpass", freqmin=0.05,
+#                    freqmax=0.94 * P_noise[0].stats.sampling_rate / 2)
+#    nft = _npts2nfft(len(P_signal[0].data))
+    nft = 1024
     spec_sig_vel, freq_sig = mtspec(data=P_signal[0].data,
                                     delta=P_signal[0].stats.delta,
                                     time_bandwidth=npi, nfft=nft,
@@ -68,7 +80,9 @@ def calc_spec(P_signal, P_noise, snrcrt, linresid, orig_id):
         SNR_smooth = smooth(SNR, smlen)
 
     # Set maximum frequency of spectrum  0.9 is the Nyquist fraction
-    f_max = 0.94 * P_signal[0].stats.sampling_rate / 2
+    f_max = 0.95 * P_signal[0].stats.sampling_rate / 2
+    if f_max > 20.0:
+        f_max = 20
 
     (begind, endind, frminp, frmaxp, frangep) = longest_segment(
         SNR_smooth, snrcrt, freq_sig, f_max)
@@ -117,16 +131,19 @@ def filter_cat(cat, cfg):
     cat = cat.filter("magnitude > {:}".format(cfg.min_mag),
                      "azimuthal_gap < {:}".format(cfg.max_gap))
     cat_final = Catalog()
+    ev_ids = []
     for evt in cat:
         orig = evt.preferred_origin()
         if (len(orig.arrivals) > 5
-                and evt.event_descriptions[0].text not in cfg.sta_exclude
-                and orig.depth > 2000):
+                and evt.event_descriptions[0].text not in cfg.evt_exclude
+                and cfg.mindepth < orig.depth/1000 < cfg.maxdepth
+                and evt.event_descriptions[0].text not in ev_ids):
             cat_final.append(evt)
+            ev_ids.append(evt.event_descriptions[0].text)
     return cat_final
 
 
-def get_fc_range(d_stress_minmax, Mo_Nm, src_beta):
+def get_fc_range(d_stress_minmax, Mo_Nm_m, Mo_Nm_p, src_beta):
     """
     Get range of corner frequencies from min and max stress drops.
 
@@ -151,9 +168,9 @@ def get_fc_range(d_stress_minmax, Mo_Nm, src_beta):
         - fc_range: list containing corner frequency trial points
     """
     fc_minmax = []
-    for d_stress in d_stress_minmax:
-        fc = (0.49 * ((d_stress / Mo_Nm) ** (1.0 / 3.0)) * src_beta * 100)
-        fc_minmax.append(fc)
+    fc_m = (0.49 * ((d_stress_minmax[0] / Mo_Nm_p) ** (1.0 / 3.0)) * src_beta * 100)
+    fc_p = (0.49 * ((d_stress_minmax[1] / Mo_Nm_m) ** (1.0 / 3.0)) * src_beta * 100)
+    fc_minmax = [fc_m, fc_p]
     if fc_minmax[0] < 1 and fc_minmax[1] <= 1.1:
         fc_range = np.arange(fc_minmax[0], fc_minmax[1], 0.02)
     elif fc_minmax[0] < 1 and fc_minmax[1] > 1.1:
@@ -161,6 +178,8 @@ def get_fc_range(d_stress_minmax, Mo_Nm, src_beta):
                               np.arange(1.1, fc_minmax[1], 0.1)))
     else:
         fc_range = np.arange(fc_minmax[0], fc_minmax[1], 0.1)
+    if np.max(fc_range) < fc_minmax[1]:
+        fc_range = np.hstack((fc_range, fc_minmax[1]))
 
     return fc_range
 
@@ -172,7 +191,7 @@ def Mw_to_M0(Mw):
     return M0_Nm
 
 
-def longest_segment(snr, _snrcrt, freq_sig, maxf, minf=0.05):
+def longest_segment(snr, _snrcrt, freq_sig, maxf, minf=0.5):
     """Find longest segment of spectra with SNR > SNRCRT."""
     # Find length of spectrum with given frequency range
     lenspec = len([ifreq for ifreq in freq_sig
@@ -193,8 +212,9 @@ def longest_segment(snr, _snrcrt, freq_sig, maxf, minf=0.05):
 
         # only first > crt
         if snr[kk] < snrcrt and snr[kk-1] >= snrcrt and kk == 1:
+            w = 1
             m.append(w)
-            bindex.append(kk-1)
+            bindex.append(kk-w)
             eindex.append(kk-1)
             w = 0
 
@@ -310,10 +330,19 @@ def Mw_scaling(scale_type, M_in):
     return Mw
 
 
+def comp_syn_spec(arrival, lnmo, spectrum, alpha_, fc):
+    """Compute synthetic spectrum"""
+    synspec = (arrival.correction * np.exp(lnmo)
+               * np.exp(-np.pi * spectrum.freq_sig
+               * (spectrum.freq_sig**(-alpha_))*arrival.tstar) /
+                (1+(spectrum.freq_sig/fc)**2))
+    return synspec
+
+
 def plotsumm(event, arrival, snrcrt, icase, alpha_, show):
     """Make summary plots."""
     from matplotlib.gridspec import GridSpec
-    Tpre = 2
+    Tpre = 4
 
     origin = event.origins[0]
     spectrum = arrival.aspectrum
@@ -323,11 +352,10 @@ def plotsumm(event, arrival, snrcrt, icase, alpha_, show):
     elif arrival.phase == "S":
         fc = event.fc_s
         Mw = event.Mw_s
-
     lnmo = np.log(Mw_to_M0(Mw))
 
-    fig = plt.figure(figsize=(7, 5.5))
-    gs = GridSpec(2, 4)
+    fig = plt.figure(figsize=(8, 5.5))
+    gs = GridSpec(2, 5)
     network = arrival.data[0].vel_corr[0].stats.network
     station = arrival.data[0].vel_corr[0].stats.station
     channel = arrival.data[0].vel_corr[0].stats.channel
@@ -349,7 +377,7 @@ def plotsumm(event, arrival, snrcrt, icase, alpha_, show):
             .slice(arrival.noise_win[0]-Tpre, arrival.sig_win[1]+Tpre))
         ax2.plot(trim.times(reftime=origin.time), trim.data/1e-9, "b-", lw=.8)
     i, j = ax2.get_ylim()
-    ax2.vlines(arrival.time-origin.time, i, j, linestyle="--", lw=0.9,
+    ax2.axvline(arrival.time-origin.time, linestyle="--", lw=0.9, color="k",
                label="Picked onset")
     ax2.axvspan(arrival.sig_win[0]-origin.time,
                 arrival.sig_win[1]-origin.time,
@@ -367,28 +395,32 @@ def plotsumm(event, arrival, snrcrt, icase, alpha_, show):
 
     # Spectra
     ax4 = fig.add_subplot(gs[1, 0:3])
-    ax4.grid()
-    ax4.semilogy(spectrum.freq_sig, spectrum.sig_full_dis/1e-9, label="Signal",
+    ax4.grid(ls="--")
+    stacorr = np.array(arrival.stacorr)
+    stacorr[np.isnan(stacorr)] = 0
+    if len(stacorr) == 0:
+        stacorr = np.zeros(len(spectrum.freq_sig))
+    spec = np.exp(np.log(spectrum.sig_full_dis*1e9) + stacorr)
+    ax4.semilogy(spectrum.freq_sig, spec, label="Signal",
                  color="red", lw=0.8)
     ax4.semilogy(spectrum.freq_sig, spectrum.noise_dis/1e-9, label="Noise",
                  color="green", lw=0.8)
     if icase > 1:
-        synspec = (arrival.correction * np.exp(lnmo)
-                   * np.exp(-np.pi * spectrum.freq_sig
-                            * (spectrum.freq_sig**(-alpha_))*arrival.tstar) /
-                   (1+(spectrum.freq_sig/fc)**2))
+        synspec = comp_syn_spec(arrival, lnmo, spectrum, alpha_, fc)
         ax4.semilogy(spectrum.freq_sig, synspec/1e-9,
                      label="Synthetic fit", linestyle="--", zorder=20, lw=0.85)
+
     ax4.set_ylabel('Displacement (nm)')
     ax4.set_xlabel('Frequency (Hz)')
-    i, j = ax4.get_ylim()
-    ax4.vlines(spectrum.fr_good, i, j, label="Signal-to-noise ratio limits",
-               linestyle="dotted", lw=0.8)
-    ax4.set_xlim(0, 24)
+    ax4.set_xlim(0, 20)
+    ax4.axvline(fc, label="Best event $f_c$", lw=1.05, c="brown", ls="-.")
     if arrival.phase == "P":
         ax4.set_ylim(10**-2, 10**3.5)
     elif arrival.phase == "S":
         ax4.set_ylim(10**-2, 10**5)
+    i, j = ax4.get_ylim()
+    ax4.vlines(spectrum.fr_good, i, j, label="SNR ratio limits",
+               linestyle="dotted", lw=1.3, color="k")
     ax4.legend(loc='upper right')
     ax4.text(0.4, 0.8, "$t^*_{:}$ = {:.3f}$\pm${:.3f}\n"
              "1000/$Q$ = {:2.1f}$\pm${:2.1f}\n% fit = {:2.0f}"
@@ -401,30 +433,56 @@ def plotsumm(event, arrival, snrcrt, icase, alpha_, show):
              bbox=dict(boxstyle="round", fc="w", alpha=0.8), fontsize=7)
 
     # Map
-    ax5 = fig.add_subplot(gs[:, 3])
+    ax5 = fig.add_subplot(gs[:, 3:], projection=ccrs.PlateCarree())
+    topo = netcdf_dataset("GEBCO_2014_2D-66_-57_9.2_18.5.grd")
+    sst = topo.variables['z'][:]
+    lats = topo.variables['lat'][:]
+    lons = topo.variables['lon'][:]
+    ax5.set_extent([-64, -59, 11, 18])
+    ax5.contourf(lons, lats, sst, 60, transform=ccrs.PlateCarree(), cmap=SCM6.oleron, vmin=-7000, vmax=7000)
+
+    shp = Reader("tectonicplates/PB2002_boundaries.shp")
+    add_s = shp.records()
+    for add in add_s:
+        if( add.geometry == None):
+            pass
+        else:
+            lines = add.geometry
+            line_good=[]
+            for l in lines:
+                start_pt = list(l.coords)[0]
+                for i in range(1,len(l.coords)):
+                    end_pt = list(l.coords)[i]
+                    simple_line = (start_pt, end_pt)
+                    line_good.append(simple_line)
+                    start_pt = end_pt
+                #end for
+            #end for
+            lines = MultiLineString(line_good)
+
+            ax5.add_geometries([lines], ccrs.PlateCarree(),\
+                                 edgecolor='green', facecolor=None)
+    ax5.coastlines(resolution="50m") 
     ax5.set_title("c) Event to station path", fontsize=7)
-    map = Basemap(projection='mill',
-                  llcrnrlon=-63.5, llcrnrlat=9, urcrnrlon=-58,
-                  urcrnrlat=19, resolution="i")
-    map.shadedrelief()
-    map.drawcoastlines()
-    map.readshapefile("/Users/sph1r17/Downloads/PB2002_boundaries", color="k",
-                      name='tectonic_plates', drawbounds=True)
-    map.drawparallels(np.arange(-90, 90, 2), labels=[1, 0, 0, 0])
-    map.drawmeridians(np.arange(-180, 180, 2), labels=[0, 0, 0, 1])
-    x_sta, y_sta = map(arrival.station_lon, arrival.station_lat)
-    ax5.scatter(x_sta, y_sta, s=50, marker="^", linewidth=0.5, zorder=10,
+    ax5.scatter(arrival.station_lon, arrival.station_lat, s=50, marker="^", linewidth=0.5, zorder=10,
                 edgecolor="k", c="white", label="Station", alpha=0.7)
-    x_evt, y_evt = map(origin.longitude, origin.latitude)
-    ax5.scatter(x_evt, y_evt, s=60, marker="*", linewidth=0.5, zorder=10,
+    ax5.scatter(origin.longitude, origin.latitude, s=60, marker="*", linewidth=0.5, zorder=10,
                 edgecolor="k", c="red", label="Epicentre", alpha=0.7)
-    map.plot([x_sta, x_evt], [y_sta, y_evt])
+    ax5.plot([arrival.station_lon, origin.longitude], [arrival.station_lat, origin.latitude])
     ax5.legend(loc="lower right")
+    g1 = ax5.gridlines(draw_labels=True, xlocs=np.arange(-64, -58, 1),
+                       ylocs=np.arange(11, 19, 1))
+    g1.xlines = False
+    g1.ylines = False
+    g1.xlabels_top = False
+    g1.ylabels_left = False
+    g1.xformatter = LONGITUDE_FORMATTER
+    g1.yformatter = LATITUDE_FORMATTER
 
     if show:
         plt.show()
     else:
-        plt.savefig("output/figures/{:}/{:}.{:}.case{:}.png".format(
+        plt.savefig("output/figures/{:}/{:}.{:}.case{:}.pdf".format(
             str(event.origin_id).split('/')[-1],
             arrival.station, arrival.phase, icase), transparent=True, dpi=300)
         plt.gcf().subplots_adjust(bottom=0.25)
@@ -432,27 +490,34 @@ def plotsumm(event, arrival, snrcrt, icase, alpha_, show):
 
 
 def plot_corner_freq(result, L2all, bestresult, phase, event, show):
+    font = {'family': 'Arial',
+            'weight': 'normal',
+            'size':    9}
+    matplotlib.rc('font', **font)
     """Plot norm vs corner frequency and moment vs corner frequency."""
-    fig = plt.figure(1, figsize=(8, 8))
+    fig = plt.figure(1, figsize=(2.15, 5))
     fig.subplots_adjust(wspace=0.3, hspace=0.3)
-    ax1 = fig.add_subplot(1, 2, 1)
-    ax1.plot(result[:, 0], L2all, 'b*-')
-    ax1.plot(bestresult[0], min(L2all), 'r^', ms=10)
+    ax1 = fig.add_subplot(1, 1, 1)
+#    ax1.set_xlim([bestresult[0]*0.75, result[:, 0].max()])
+#    ax1.set_ylim([min(L2all)*0.9998, min(L2all)*1.002])
+    ax1.plot(result[:, 0], L2all, '-bo', markersize=2, lw=1)
+    ax1.plot(bestresult[0], min(L2all), 'r*', ms=10)
+    ax1.grid(ls="--")
     ax1.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-    ax1.set_xlabel('Corner Frequency (Hz)')
+    ax1.set_xlabel('{:}-wave corner Frequency (Hz)'.format(phase))
     ax1.set_ylabel('L2 Norm')
-    ax2 = fig.add_subplot(1, 2, 2)
-    ax2.plot(result[:, 0], 2/3 * np.log10(np.exp(result[:, 1])*1e7)-10.73,
-             'b*-')
-    ax2.plot(bestresult[0], 2/3 * np.log10(np.exp(bestresult[1])*1e7)-10.73,
-             'r^', ms=10)
-    ax2.set_xlabel('Corner Frequency (Hz)')
-    ax2.set_ylabel('Mw')
+#    ax2 = fig.add_subplot(1, 2, 2, sharex=ax1)
+#    ax2.plot(result[:, 0], 2/3 * np.log10(np.exp(result[:, 1])*1e7)-10.73,
+#             'b*-')
+#    ax2.plot(bestresult[0], 2/3 * np.log10(np.exp(bestresult[1])*1e7)-10.73,
+#             'r^', ms=10)
+#    ax2.set_xlabel('Corner Frequency (Hz)')
+#    ax2.set_ylabel('Mw')
     if show:
         plt.show()
     else:
-        plt.savefig("output/figures/{:}/Fc_norm-{:}.png".format(
-            str(event.origin_id).split('/')[-1], phase))
+        plt.savefig("output/figures/{:}/Fc_norm-{:}.pdf".format(
+            str(event.origin_id).split('/')[-1], phase), dpi=300, transparent=True)
 
 
 def plot_corner_freq_v_tstar(bestresult, phase, arrivals, tsfc, fcrange,
@@ -521,16 +586,17 @@ def buildG(a_event, α, POS, icase):
     for i_arr, arrival in enumerate(arrivals):
         freq_x = arrival.aspectrum.freq_good
         # RHS of Eq 4 in Wei & Wiens(2018, EPSL)
-        exponent = -1 * np.pi * freq_x ** (1-α)  
-        Gblock = np.array([exponent]).transpose()
+        exponent = -1 * np.pi * freq_x * freq_x ** -α 
+        exponent = np.array([exponent]).transpose()
+        Gblock = np.atleast_3d(exponent)
         if i_arr == 0:
             G = Gblock
         else:
-            oldblock = np.hstack((G, np.zeros((G.shape[0], 1))))
+            oldblock = np.hstack((G, np.zeros((G.shape[0], 1, 1))))
             newblock = np.hstack((
-                np.zeros((Gblock.shape[0], G.shape[1])), Gblock))
+                np.zeros((Gblock.shape[0], G.shape[1], 1)), Gblock))
             G = np.vstack((oldblock, newblock))
-    G = np.hstack((np.ones((G.shape[0], 1)), G))
+    G = np.hstack((np.ones((G.shape[0], 1, 1)), G))
     return G
 
 
@@ -548,15 +614,20 @@ def buildd(a_event, fc, POS, icase, lnM=0):
         arrivals = a_event.s_arrivals_LQ
     elif POS == "S" and icase == 3:
         arrivals = a_event.s_arrivals_LQ_fitting
-
     for i_arr, arrival in enumerate(arrivals):
         correc = arrival.correction
+        stacorr = np.array(arrival.stacorr)
+        stacorr[np.isnan(stacorr)] = 0
+        stacorrf = np.array(arrival.stacorrf)
         freq_x = arrival.aspectrum.freq_good
         spec_x = arrival.aspectrum.sig_good_dis
-
+        
+        stacorr_good = stacorr[np.argwhere(np.in1d(stacorrf, freq_x))][:, 0]
+        if len(stacorr_good) == 0:
+            stacorr_good = np.zeros(len(spec_x))
         # Displacement spectra (Brune, 1970). n=w for w^-2 models.
         # LHS of Eq 4 in Wei & Wiens(2018, EPSL)
-        stad = np.array([np.log(spec_x) - np.log(correc)
+        stad = np.array([np.log(spec_x) + stacorr_good - np.log(correc)
                          + np.log(1+(freq_x/fc)**2) - lnM]).transpose()
         if i_arr == 0:
             data = stad
@@ -569,14 +640,20 @@ def invert_tstar(a_event, fc, phase, α, constr_MoS, icase):
     """Invert t*."""
     data = buildd(a_event, fc, phase, icase)
     G = buildG(a_event, α, phase, icase)
-    Ginv = np.linalg.inv(np.dot(G.T, G))
-    model, residu = nnls(G, data[:, 0])
-    lnmomen = model[0]
+    Ginv = np.linalg.inv(np.dot(G[:, :, 0].T, G[:, :, 0]))
+    model, residu = nnls(G[:, :, 0], data[:, 0])
+    if constr_MoS == 0:
+        lnmomen = model[0]
+    elif constr_MoS == 1:
+        try:
+            lnmomen = np.log(10**(1.5*(a_event.Mw_p+10.73))/1e7)
+        except:
+            pass
     tstar = model[1:]
-    L2P = residu / np.sum(data)
-    vardat = residu / np.sqrt(data[:, 0].shape[0] - 2)
+    L2P = residu / np.sum(data[:, 0])
+    vardat = L2P / np.sqrt(data[:, 0].shape[0] - 1)
     lnmomenErr = np.sqrt(vardat*Ginv[0][0])
-    estdataerr = np.dot(G[:, :], model)
+    estdataerr = np.dot(G[:, :, 0], model)
     tstarerr = np.sqrt(vardat * Ginv.diagonal()[1:])
     return (data, model, residu, lnmomen, tstar, G, Ginv, vardat, lnmomenErr,
             estdataerr, tstarerr, L2P)
@@ -609,24 +686,45 @@ def fitting(arrival, lnmomen, fc, alpha):
     """
     CALCULATE HOW WELL THE SYNTHETIC SPECTRUM FITS THE DATA.
 
-    IF THE FITTING CURVE IS BELOW THE NOISE, THEN resid = 999999.
+    IF THE FITTING CURVE IS BELOW THE NOISE, THEN fit = 0.
     """
     corr = arrival.correction
-    spec = arrival.aspectrum.sig_good_dis
-    freq = arrival.aspectrum.freq_good
-    frmin = arrival.aspectrum.fr_good[0]
-    frmax = arrival.aspectrum.fr_good[1]
+    spec = arrival.aspectrum.sig_full_dis
+    freq = arrival.aspectrum.freq_sig
+    stacorr = np.array(arrival.stacorr)
+    stacorr[np.isnan(stacorr)] = 0
+    if len(stacorr) == 0:
+        stacorr = np.zeros(len(spec))
+    spec = np.exp(np.log(spec*1e9) + stacorr) / 1e9
+    frmin, frmax = arrival.aspectrum.fr_good
     invtstar = arrival.tstar
     synspec = (corr * np.exp(lnmomen) * np.exp(
-        -np.pi*freq*(freq**(-alpha))*invtstar)
-        / (1+(freq/fc)**2))
+        -np.pi * freq * (freq**(-alpha)) * invtstar)
+        / (1 + (freq / fc)**2))
     indx = np.all([(freq >= frmin), (freq < frmax)], axis=0)
     specx = spec[indx]
     freqx = freq[indx]
     synx = synspec[indx]
     resid = (1-((np.linalg.norm(np.log(synx)-np.log(specx)))**2/(len(freqx)-1)
              / np.var(np.log(specx))))
-    return resid
+    residual_nm = np.log(synspec*1e9) - np.log(spec*1e9)
+    residual_nm = np.where((freq >= frmin) & (freq <= frmax), residual_nm, np.nan)
+
+    df=abs(freq[1]-freq[0])
+    nlowf=0
+    narea=0
+    for ifreq in range(len(freq)):
+        if (freq[ifreq]>frmax and freq[ifreq]<15):
+            if (np.log(synspec[ifreq])<np.log(spec[ifreq]) or
+                    np.log(synspec[ifreq])>np.log(spec[ifreq])+1):
+                narea=narea+np.log(spec[ifreq])-np.log(synspec[ifreq])
+            if np.log(synspec[ifreq])>np.log(spec[ifreq])+2:
+                nlowf=nlowf+5
+            elif np.log(synspec[ifreq])>np.log(spec[ifreq])+1:
+                nlowf=nlowf+1
+        if narea<-10 and nlowf*df>3:
+            resid=0
+    return resid, [freq, residual_nm]
 
 
 def smooth(x, window_len, window='hanning'):
@@ -649,3 +747,80 @@ def smooth(x, window_len, window='hanning'):
         w = eval('np.'+window+'(window_len)')
     y = np.convolve(w/w.sum(), s, mode='valid')
     return y[int(window_len/2):-int(window_len/2)]
+
+
+def compute_station_corrections(directory, phases):
+    with open("{:}/residuals.pkl".format(directory), "rb") as f:
+        p_resid_dic, s_resid_dic = pickle.load(f)
+
+    MIN_OBS_PLOT_STA_P = 5
+    MIN_OBS_PLOT_STA_S = 5
+    GRIDX = 4
+
+    plt.rcParams["font.size"] = "12"
+
+    for phase in phases:
+        dic_out = {}
+        if phase == "P":
+            dic = p_resid_dic
+            min_obs_plot = MIN_OBS_PLOT_STA_P
+        elif phase == "S":
+            dic = s_resid_dic
+            min_obs_plot = MIN_OBS_PLOT_STA_S
+        number_stations = len([sta for sta in dic.keys() if len(dic[sta]) > min_obs_plot])
+    
+        gridy = int(np.ceil(number_stations/GRIDX))
+        fig, axs = plt.subplots(13, GRIDX, figsize=(18, 26))
+        axs = axs.flatten()
+    
+        # Remove excess subplots
+        for n in range(GRIDX * gridy):
+            if n > number_stations-1:
+                fig.delaxes(axs[n])
+    
+        dic_filt = {k: v for k, v in dic.items() if len(v) > min_obs_plot}
+    
+        for n_sta, sta in enumerate(sorted(dic_filt.keys())):
+            first_event = list(dic_filt[sta])[0]
+            freq = dic_filt[sta][first_event][0]
+            sta_all = np.empty((len(dic_filt[sta].keys()), len(freq)))
+            sta_all[:] = np.nan
+            for n_evt, evt in enumerate(dic_filt[sta].keys()):
+                spec = dic_filt[sta][evt][1]
+                axs[n_sta].plot(dic_filt[sta][evt][0], spec, c="gray", alpha=0.2)
+                sta_all[n_evt, :] = spec
+            median = np.nanmedian(sta_all, axis=0)
+            stdev = np.nanstd(sta_all, axis=0)
+
+            for i in range(len(median)):
+                if sum(~np.isnan(sta_all[:, i])) <= min_obs_plot:
+                    median[i] = np.nan
+
+            median = smooth(median, 10)
+            stdev = smooth(stdev, 10)
+            dic_out[sta] = [freq, median]
+            axs[n_sta].plot(freq, median, c="red", label="Median", alpha=0.8, lw=1.4)
+            axs[n_sta].plot(freq, median+stdev, c="blue",  alpha=0.6)
+            axs[n_sta].plot(freq, median-stdev, c="blue",  alpha=0.6)
+            axs[n_sta].set_ylim([-3, 3])
+            axs[n_sta].set_xlim([0, 20])
+            axs[n_sta].set_title("{}: n = {}".format(sta, len(sta_all)), fontweight='bold', fontsize=13)
+            axs[n_sta].grid(ls="--", alpha=0.4, c="gray")
+            if n_sta == 0:
+                axs[n_sta].legend(fontsize=14)
+        fig.add_subplot(111, frameon=False)
+        # hide tick and tick label of the big axes
+        plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
+        plt.grid(False)
+        plt.xlabel("Frequency (Hz)", fontsize=17, fontweight='bold')
+        plt.ylabel("Residual spectrum, ln($A_{{syn}}$) - ln($A_{{obs}}$) (nm)", fontsize=17, fontweight='bold')
+        plt.suptitle("{}-wave station residuals".format(phase), fontsize=20, fontweight='bold')
+        plt.tight_layout(rect=[0, 0.0, 1, 0.98])
+        plt.savefig("{}/figures/{}-wave_stationresiduals.png".format(directory, phase), dpi=250, bbox_inches="tight", transparent=True)
+        if phase == "P":
+            med_res_all_p = dic_out
+        elif phase == "S":
+            med_res_all_s = dic_out
+
+    with open("output/residuals_med.pkl", "wb") as f:
+        pickle.dump([med_res_all_p, med_res_all_s], f)

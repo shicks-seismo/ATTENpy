@@ -103,9 +103,13 @@ def amplitude_correction(mod_name, Δ, z_src, phase):
         Δ_1 = Δ - Δ_inc
     else:
         Δ_1 = 0.0
-    ang_toff_1 = taup_model.get_travel_times(
-        source_depth_in_km=z_src, distance_in_degree=Δ_1,
-        phase_list=phases)[0].takeoff_angle
+    try:
+        ang_toff_1 = taup_model.get_travel_times(
+            source_depth_in_km=z_src, distance_in_degree=Δ_1,
+            phase_list=phases)[0].takeoff_angle
+    except:
+        return 0.0
+        
     Δ_2 = Δ + Δ_inc
     ang_toff_2 = taup_model.get_travel_times(
         source_depth_in_km=z_src, distance_in_degree=Δ_2,
@@ -128,8 +132,8 @@ def amplitude_correction(mod_name, Δ, z_src, phase):
     # 1. Calculate geometric spreading correction.
     # Equation 8.70 of Lay and Wallace.
     g = np.sqrt(
-        (rho_s * v_source * np.sin(i_h) * dihddel) /
-        (rho_r * v_rec * np.sin(np.deg2rad(Δ)) * np.cos(i_0)))
+        (rho_s * v_source * 1000 * np.sin(i_h) * dihddel) /
+        (rho_r * v_rec * 1000 * np.sin(np.deg2rad(Δ)) * np.cos(i_0)))
 
     # 2. Now do free surface correction ######################################
     # Aki & Richards; Kennett (1991, GJI = EQ15); Yoshimoto et al (1997, PEPI)
@@ -153,7 +157,6 @@ def amplitude_correction(mod_name, Δ, z_src, phase):
         radp = np.sqrt(4.0 / 15.0)
     elif phase == "S":
         radp = np.sqrt(2.0 / 5.0)
-
     # 5. Now combine into single correction (units: m)
     amom = (g * radp * U) / (4 * np.pi * rho_s * (rad_E * 1000) *
                              (v_source*1000)**3)
