@@ -9,20 +9,16 @@ from scipy.stats import pearsonr
 import obspy
 from mtspec.multitaper import mtspec
 import matplotlib.pyplot as plt
-from obspy.signal.util import _npts2nfft
 import cartopy.crs as ccrs
 from cartopy.io.shapereader import Reader
-from cartopy.feature import ShapelyFeature
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from shapely.geometry import MultiLineString
 from netCDF4 import Dataset as netcdf_dataset
 import ScientificColourMaps6 as SCM6
 import matplotlib
-from obspy.imaging.spectrogram import _nearest_pow_2
 import pickle
-import pandas as pd
 
-font = {'family': 'Latin Modern Sans',
+font = {'family': 'Arial',
         'weight': 'normal',
         'size':    7}
 matplotlib.rc('font', **font)
